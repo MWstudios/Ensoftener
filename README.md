@@ -1,4 +1,4 @@
-# Ensoftener - A SharpDX.Direct2D extension for WinForms
+# Ensoftener - A SharpDX.Direct2D1 extension for WinForms
 Do you find SharpDX's implementation of Direct2D too confusing or limiting? Do you have trouble getting all those device contexts and shaders to work? SharpDX has been always like this, and with their forums being shut down and the amount of documentation getting close to zero, it can be even harder.
 Something needs to change. We need to... ensoften it...
 
