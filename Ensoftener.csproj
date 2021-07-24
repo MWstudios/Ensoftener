@@ -7,6 +7,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon />
     <StartupObject />
+    <Company />
+    <Authors>MWstudios</Authors>
+    <Product />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -14,11 +17,12 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <AllowedReferenceRelatedFileExtensions>.allowedextension</AllowedReferenceRelatedFileExtensions>
+    <DocumentationFile>Ensoftener.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>D:\Misa\programy\Ensoftener\Ensoftener.xml</DocumentationFile>
+    <DocumentationFile>Ensoftener.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
