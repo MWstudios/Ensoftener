@@ -19,7 +19,8 @@ namespace Ensoftener
         public SamplingFilter ScaleUpSampling { get; set; } = SamplingFilter.Bilinear;
         public SamplingFilter MipmapSampling { get; set; } = SamplingFilter.Point;
         public bool AnisotropicFiltering { get; set; } = true;
-        [PropertyBinding(-1, "0", "1", "0", Type = PropertyType.Vector4)] public Vector4 BorderExpansion { get; set; } = new(0, 0, 0, 0);
+        [PropertyBinding(-1, "(0, 0, 0, 0)", "(0, 0, 0, 0)", "(0, 0, 0, 0)", Type = PropertyType.Vector4)]
+        public Vector4 BorderExpansion { get; set; } = new(0, 0, 0, 0);
         /// <summary>Initializes a new custom effect.</summary>
         /// <param name="guid">The GUID of the effect. Each GUID has one pixel shader assigned to it,
         /// hence the <see cref="CloneablePixelShader"/>'s ability to have different pixel shaders.</param>
