@@ -7,6 +7,20 @@
         <member name="T:Ensoftener.Global">
             <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
         </member>
+        <member name="P:Ensoftener.Global.FinalDC">
+            <summary>The final device context that renders on screen, and the only one that uses byte color depth.
+            Updates after <b><see cref="M:Ensoftener.Global.EndRender"/></b> is called.</summary>
+            <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="M:Ensoftener.Global.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})"/></b> on this context
+            for the fastest performance. If you were to convert any context from <b><see cref="P:Ensoftener.Global.DCs"/></b> to GDI, it would take much longer, as the other contexts use
+            <b><see cref="F:SharpDX.DXGI.Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
+            which takes about half a second. Since the final context's pixel format is <b><see cref="F:SharpDX.DXGI.Format.B8G8R8A8_UNorm"/></b>, it's the easiest and fastest to copy.</remarks>
+        </member>
+        <member name="P:Ensoftener.Global.SwapChainDescription">
+            <summary><b><see cref="P:Ensoftener.Global.SwapChain"/></b>'s creation specs (in case you need them).</summary>
+        </member>
+        <member name="P:Ensoftener.Global.ShaderFile">
+            <summary>A .cso file that will be loaded by every effect that's created from now on. One shader class can have different pixel shaders for every instance.</summary>
+        </member>
         <member name="P:Ensoftener.Global.D2DFactory">
             <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
@@ -16,17 +30,14 @@
         <member name="P:Ensoftener.Global.D3DDevice">
             <remarks>Based either on a DXGIFactory or can be freely created.</remarks>
         </member>
-        <member name="P:Ensoftener.Global.DXGIFactories">
-            <summary>This is where it all starts. The factories from which everything else is derived.</summary>
-        </member>
-        <member name="P:Ensoftener.Global.SwapChains">
+        <member name="P:Ensoftener.Global.SwapChain">
             <remarks>Based on D3DDevice and a DXGIFactory.</remarks>
         </member>
         <member name="P:Ensoftener.Global.DCs">
             <summary>The DeviceContexts used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
         <member name="P:Ensoftener.Global.RenderTargets">
-            <summary>The render target of the DeviceContext.</summary><remarks>Based on a DeviceContext and a SwapChain.</remarks>
+            <summary>The render targets of the DeviceContexts. All use 32-bit float color depth.</summary><remarks>Based on DeviceContext.</remarks>
         </member>
         <member name="P:Ensoftener.Global.DWriteFactory">
             <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
@@ -34,12 +45,14 @@
         <member name="P:Ensoftener.Global.WICFactory">
             <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
         </member>
+        <member name="P:Ensoftener.Global.RegisteredEffects">
+            <summary>A list of all effects that were created.</summary> 
+        </member>
         <member name="P:Ensoftener.Global.OutputDevice">
             <summary>The index of the setup that will serve as the output and present its contents to the screen.</summary>
         </member>
         <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Nullable{SharpDX.Size2})">
             <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
-            <param name="DeviceDpi">Set this to your form's DeviceDpi property.</param>
             <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
             All components will be accessible from their lists. Cannot be less than 1.</param>
             <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
@@ -51,7 +64,7 @@
             <summary> Creates a SharpDX Bitmap off of a GDI+ bitmap.</summary>
         </member>
         <member name="M:Ensoftener.Global.ToGDIBitmap(SharpDX.Direct2D1.Bitmap1)">
-            <summary> Creates a GDI+ bitmap off of a SharpDX Bitmap. (very slow)</summary>
+            <summary> Creates a GDI+ bitmap off of a SharpDX Bitmap. Very slow if using float colors.</summary>
         </member>
         <member name="M:Ensoftener.Global.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
             <summary>Copies the device context's render target for further CPU processing (such as saving to a file).</summary>
@@ -61,17 +74,19 @@
             <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
             <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
         </member>
-        <member name="M:Ensoftener.Global.RenderScreenShaders(SharpDX.Direct2D1.DeviceContext,Ensoftener.EffectTransformer,System.Boolean,SharpDX.Direct2D1.Effect[])">
-            <summary>Batch renders an array of effects applied go the entire screen.</summary>
+        <member name="M:Ensoftener.Global.RenderScreenShaders(SharpDX.Direct2D1.DeviceContext,Ensoftener.EffectTransformer,SharpDX.Direct2D1.Effect[])">
+            <summary>Batch renders an array of effects applied to the entire screen.</summary>
             <param name="transform">An additional transorm to apply at the end.</param>
-            <param name="uvPrecision">When off, the screen size will round to a power of 2 and any shader using texture coordinates will become practically unusable.
-            <br/>When on, the coordinates will display correctly but the performance of shaders will decrease.</param>
             <param name="effects">The array of effects to render.</param>
         </member>
-        <member name="M:Ensoftener.Global.AddSetups(System.Int32,System.Nullable{SharpDX.Size2})">
+        <member name="M:Ensoftener.Global.AddSetups(System.Int32,System.Nullable{SharpDX.Size2},System.Boolean)">
             <summary>Adds a new amount of parallel rendering setups.</summary>
             <param name="amount">The amount of setups to create.</param>
-            <param name="Sizes">The default size of the device contexts about to be created. By default it's the window size.</param>
+            <param name="sizes">The default size of the device contexts about to be created. By default it's the window size.</param>
+            <param name="useFloats">Create the contexts with 32-bit float color depth (128bpp) instead of 8-bit byte color depth (32bpp).
+            <br/><br/>Graphics-wise, floats are more useful, as they allow for colors to be "whiter than white" (or more than 1) and "blacker than black" (negative),
+            which is useful for pixel shaders. <br/>Performance-wise, bytes are faster if you're converting to GDI bitmaps often, and require 4 times less memory.
+            <br/>You won't need to use bytes unless you need to solve one of these two issues.</param>
         </member>
         <member name="M:Ensoftener.Global.ResizeSetup(System.Int32,SharpDX.Size2)">
             <summary>Resizes a setup.</summary>
@@ -90,16 +105,37 @@
         <member name="M:Ensoftener.Global.ResizeWithScreen(SharpDX.Direct2D1.DeviceContext,System.Boolean)">
             <summary>Set this context to be resizable with the screen.</summary>
         </member>
+        <member name="M:Ensoftener.Global.AddIfMissing``1(System.Collections.Generic.List{``0},``0)">
+            <summary>Adds an object to the end of the <seealso cref="T:System.Collections.Generic.List`1"/> only if the object isn't already present.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.Clone``1(System.Collections.Generic.List{``0})">
+            <summary>Copies all contents of a <seealso cref="T:System.Collections.Generic.List`1"/> into a new <seealso cref="T:System.Collections.Generic.List`1"/>.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.OneItem``1(System.Collections.Generic.List{``0},``0)">
+            <summary>Clears a <seealso cref="T:System.Collections.Generic.List`1"/> and adds one item.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
+            <summary>Gets the device context's drawing rectangle.</summary>
+        </member>
         <member name="T:Ensoftener.ShadedEffectBase">
             <summary>
-            A prefabricated effect inherited from CustomEffectBase. You can modify its input count, constant buffer and its nodes.
+            A prefabricated effect inherited from <seealso cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer and its nodes.
             <br/>You can even nest more effects inside it, which then can work with 32-bit float color depth.
             </summary>
+        </member>
+        <member name="M:Ensoftener.ShadedEffectBase.#ctor(System.Guid)">
+            <summary>Initializes a new custom effect.</summary>
+            <param name="guid">The GUID of the effect. Each GUID has one pixel shader assigned to it,
+            hence the <see cref="T:Ensoftener.CloneablePixelShader"/>'s ability to have different pixel shaders.</param>
+        </member>
+        <member name="T:Ensoftener.CloneablePixelShader">
+            <summary>A shader with no constant buffer, no inside effects and 1 texture input.
+            Its GUID is different for every instance, which means it can load a different shader every time.</summary>
         </member>
         <member name="T:Ensoftener.SvgImage">
             <summary>A SVG image that can be modified at runtime.</summary>
         </member>
-        <member name="P:Ensoftener.SvgImage.UpdateifOutdated">
+        <member name="P:Ensoftener.SvgImage.UpdateIfOutdated">
             <summary>Rebuilds the SVG everytime the Outdated is set to true.</summary>
         </member>
         <member name="P:Ensoftener.SvgImage.Outdated">
@@ -127,8 +163,8 @@
             <param name="fromFile">Determines whether to read from a file or from the string itself.</param>
         </member>
         <member name="M:Ensoftener.SvgImage.Rebuild">
-            <summary>Recreates the SVG image. See the description of the <b><see cref="P:Ensoftener.SvgImage.Outdated"/></b> property for why this needs to be done.
-            <br/>This method is automatically called when <b><see cref="P:Ensoftener.SvgImage.UpdateifOutdated"/></b> is set to true.</summary>
+            <summary>Recreates the SVG image. See the description of the <b><seealso cref="P:Ensoftener.SvgImage.Outdated"/></b> property for why this needs to be done.
+            <br/>This method is automatically called when <b><seealso cref="P:Ensoftener.SvgImage.UpdateIfOutdated"/></b> is set to true.</summary>
         </member>
         <member name="P:Ensoftener.SvgImage.SvgElement1.Attributes">
             <summary>Gets all attribute names that exist in this element.</summary>

@@ -44,13 +44,13 @@ namespace Ensoftener
     /// <summary>A SVG image that can be modified at runtime.</summary>
     public class SvgImage : IDisposable
     {
-        float x, y, rotation, width = 1, height = 1; private bool disposedValue, outdated; XmlDocument DocumentAsXml; DeviceContext5 DeviceContext;
+        float x, y, rotation, width = 1, height = 1; bool disposedValue, outdated; XmlDocument DocumentAsXml; readonly DeviceContext5 DeviceContext;
         public SvgElement1 Root { get; private set; } public SvgDocument Document { get; private set; }
         /// <summary>Rebuilds the SVG everytime the Outdated is set to true.</summary>
-        public bool UpdateifOutdated { get; set; }
+        public bool UpdateIfOutdated { get; set; }
         /// <summary>Direct2D-controlled SVG elements are less accessible than in a normal XML parser, and therefore can go out of sync.
         /// This flag indicates that the SVG needs to be recreated.</summary>
-        public bool Outdated { get => outdated; private set { outdated = value; if (UpdateifOutdated && value) Rebuild(); } }
+        public bool Outdated { get => outdated; private set { outdated = value; if (UpdateIfOutdated && value) Rebuild(); } }
         /// <summary>X position of the SVG.</summary>
         public float X { get => x; set { x = value; SetTranslation(); } }
         /// <summary>Y position of the SVG.</summary>
@@ -63,12 +63,9 @@ namespace Ensoftener
         public float Height { get => height; set { height = value; SetTranslation(); } }
         void SetTranslation()
         {
-            var decimalPoint = System.Globalization.CultureInfo.InvariantCulture;
-            Root.SubElements.ForEach(e =>
-            {
-                if (e.Name == "g") e["transform"] = "translate(" + x.ToString(decimalPoint) + "," + y.ToString(decimalPoint)
-                    + ") rotate(" + rotation.ToString(decimalPoint) + ") scale(" + Width.ToString(decimalPoint) + "," + Height.ToString(decimalPoint) + ")";
-            });
+            var dP = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var e in Root.SubElements) if (e.Name == "g") e["transform"] =
+                    $"translate({x.ToString(dP)},{y.ToString(dP)}) rotate({rotation.ToString(dP)}) scale({Width.ToString(dP)},{Height.ToString(dP)})";
         }
         /// <summary>Creates an SVG image from a file or an XML string.</summary>
         /// <param name="input">The file path or XML string.</param>
@@ -78,8 +75,8 @@ namespace Ensoftener
             DeviceContext = d2dc.QueryInterface<DeviceContext5>();
             Rebuild(fromFile ? File.ReadAllText(input) : input);
         }
-        /// <summary>Recreates the SVG image. See the description of the <b><see cref="Outdated"/></b> property for why this needs to be done.
-        /// <br/>This method is automatically called when <b><see cref="UpdateifOutdated"/></b> is set to true.</summary>
+        /// <summary>Recreates the SVG image. See the description of the <b><seealso cref="Outdated"/></b> property for why this needs to be done.
+        /// <br/>This method is automatically called when <b><seealso cref="UpdateIfOutdated"/></b> is set to true.</summary>
         public void Rebuild() => Rebuild(DocumentAsXml.OuterXml);
         public void Rebuild(string XML)
         {
@@ -118,7 +115,7 @@ namespace Ensoftener
             {
                 OwnerImage = ownerImage; Owner = owner; Element = element; svgToXml = xmlCounterpart; Name = svgToXml.Name;
                 foreach (XmlAttribute node in svgToXml.Attributes) Attributes.Add(node.Name); int i = 0;
-                foreach (XmlNode child in svgToXml.ChildNodes) if (child is XmlElement xE) { SubElements.Add(new(ownerImage, this, Element.Children[i], xE)); i++; }
+                foreach (XmlNode child in svgToXml.ChildNodes) if (child is XmlElement xE) SubElements.Add(new(ownerImage, this, Element.Children[i++], xE));
             }
             /// <summary>Gets or sets an attribute by its name. <b>If you're creating a new attribute, the SVG becomes outdated.</b></summary>
             public string this[string key]
@@ -155,7 +152,7 @@ namespace Ensoftener
                 }
             }
             // TODO: Finalizační metodu přepište, jen pokud metoda Dispose(bool disposing) obsahuje kód pro uvolnění nespravovaných prostředků.
-            ~SvgElement1() { Dispose(disposing: false); }
+            ~SvgElement1() => Dispose(disposing: false);
             public void Dispose() { Dispose(disposing: true); GC.SuppressFinalize(this); }
         }
     }

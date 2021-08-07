@@ -10,7 +10,7 @@ namespace Ensoftener
             bool held2; public bool PressedDown { get; private set; } public bool Held { get; private set; } public bool Released { get; private set; }
             public void Update(Keys button) { Held = IsKeyPressed(button); if (Held) PressedDown = !held2; else Released = held2; held2 = Held; }
         }
-        static int WHEEL_DELTA = int.MaxValue; static byte[] keyInputs = new byte[256];
+        static int WHEEL_DELTA = int.MaxValue; readonly static byte[] keyInputs = new byte[256];
         public static MouseButton LeftButton { get; private set; } = new();
         public static MouseButton RightButton { get; private set; } = new();
         public static MouseButton MiddleButton { get; private set; } = new();
