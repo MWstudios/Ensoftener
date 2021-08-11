@@ -112,13 +112,14 @@ namespace Ensoftener
         public class SvgElement1 : IDisposable
         {
             readonly XmlElement svgToXml; readonly SvgElement Element; bool disposedValue;
-            public SvgImage OwnerImage { get; } public SvgElement1 Owner { get; } public string Name { get; private set; }
+            public SvgImage OwnerImage { get; } public SvgElement1 Owner { get; } public string Name => svgToXml.Name;
+            public string InlineText { get => svgToXml.InnerText; set => svgToXml.InnerText = value; }
             public List<SvgElement1> SubElements { get; private set; } = new();
             /// <summary>Gets all attribute names that exist in this element.</summary>
             public List<string> Attributes { get; private set; } = new();
             public SvgElement1(SvgImage ownerImage, SvgElement1 owner, SvgElement element, XmlElement xmlCounterpart)
             {
-                OwnerImage = ownerImage; Owner = owner; Element = element; svgToXml = xmlCounterpart; Name = svgToXml.Name;
+                OwnerImage = ownerImage; Owner = owner; Element = element; svgToXml = xmlCounterpart;
                 foreach (XmlAttribute node in svgToXml.Attributes) Attributes.Add(node.Name); int i = 0;
                 foreach (XmlNode child in svgToXml.ChildNodes) if (child is XmlElement xE && !IgnoreElement(svgToXml, xE))
                     { SubElements.Add(new(ownerImage, this, Element.Children[i], xE)); i++; }
