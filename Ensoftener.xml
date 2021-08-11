@@ -157,6 +157,9 @@
         <member name="P:Ensoftener.SvgImage.Height">
             <summary>Height <b>multiplier</b> of the SVG.</summary>
         </member>
+        <member name="P:Ensoftener.SvgImage.Matrix">
+            <summary>Transform matrix of the SVG. This applies on top of the other translations.</summary>
+        </member>
         <member name="M:Ensoftener.SvgImage.#ctor(SharpDX.Direct2D1.DeviceContext,System.String,System.Boolean)">
             <summary>Creates an SVG image from a file or an XML string.</summary>
             <param name="input">The file path or XML string.</param>
@@ -169,8 +172,20 @@
         <member name="P:Ensoftener.SvgImage.SvgElement1.Attributes">
             <summary>Gets all attribute names that exist in this element.</summary>
         </member>
+        <member name="M:Ensoftener.SvgImage.SvgElement1.DissectAttribute(System.String,System.Boolean)">
+            <summary>Some elements may contain an attribute (such as "style") that packs multiple attributes into one. This method dissects it back.</summary>
+            <param name="key">The attribute to be dissected.</param>
+            <param name="overrideExisting">Override existing attributes by the new and dissected ones.</param>
+            <remarks>This method outdates the image.</remarks>
+        </member>
         <member name="P:Ensoftener.SvgImage.SvgElement1.Item(System.String)">
-            <summary>Gets or sets an attribute by its name. <b>If you're creating a new attribute, the SVG becomes outdated.</b></summary>
+            <summary>Gets or sets an attribute by its name.</summary>
+            <remarks>This method outdates the image.</remarks>
+        </member>
+        <member name="P:Ensoftener.SvgImage.SvgElement1.Item(System.String,System.String)">
+            <summary>Gets an attribute by its name and returns <paramref name="defaultValue"/> if nothing is found.</summary>
+            <remarks>If you're trying to get a shape's coordinates, you might want to use this with <paramref name="defaultValue"/> set to 0.
+            Some SVG editors like Boxy leave out this attribute if the shape is located at (0, 0) and same thing could happen in other cases as well.</remarks>
         </member>
     </members>
 </doc>

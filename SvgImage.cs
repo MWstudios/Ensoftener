@@ -37,6 +37,7 @@ using System.Windows.Forms.ComponentModel.Com2Interop;
 using System.Security.Authentication.ExtendedProtection;*/ //noice
 using System.Collections.Generic;
 
+using SharpDX;
 using SharpDX.Direct2D1;
 
 namespace Ensoftener
@@ -44,7 +45,7 @@ namespace Ensoftener
     /// <summary>A SVG image that can be modified at runtime.</summary>
     public class SvgImage : IDisposable
     {
-        float x, y, rotation, width = 1, height = 1; bool disposedValue, outdated; XmlDocument DocumentAsXml; readonly DeviceContext5 DeviceContext;
+        float x, y, rotation, width = 1, height = 1; Matrix3x2 matrix = new(); bool disposedValue, outdated; XmlDocument DocumentAsXml; readonly DeviceContext5 DeviceContext;
         public SvgElement1 Root { get; private set; } public SvgDocument Document { get; private set; }
         /// <summary>Rebuilds the SVG everytime the Outdated is set to true.</summary>
         public bool UpdateIfOutdated { get; set; }
@@ -61,11 +62,15 @@ namespace Ensoftener
         public float Width { get => width; set { width = value; SetTranslation(); } }
         /// <summary>Height <b>multiplier</b> of the SVG.</summary>
         public float Height { get => height; set { height = value; SetTranslation(); } }
+        /// <summary>Transform matrix of the SVG. This applies on top of the other translations.</summary>
+        public Matrix3x2 Matrix { get => matrix; set { matrix = value; SetTranslation(); } }
         void SetTranslation()
         {
             var dP = System.Globalization.CultureInfo.InvariantCulture;
             foreach (var e in Root.SubElements) if (e.Name == "g") e["transform"] =
-                    $"translate({x.ToString(dP)},{y.ToString(dP)}) rotate({rotation.ToString(dP)}) scale({Width.ToString(dP)},{Height.ToString(dP)})";
+                    $"translate({x.ToString(dP)},{y.ToString(dP)}) rotate({rotation.ToString(dP)}) scale({Width.ToString(dP)},{Height.ToString(dP)})"
+                    + $" matrix({matrix.M11.ToString(dP)}, {matrix.M12.ToString(dP)}, {matrix.M21.ToString(dP)},"
+                    + $" {matrix.M22.ToString(dP)}, {matrix.M31.ToString(dP)}, {matrix.M32.ToString(dP)})";
         }
         /// <summary>Creates an SVG image from a file or an XML string.</summary>
         /// <param name="input">The file path or XML string.</param>
@@ -115,9 +120,33 @@ namespace Ensoftener
             {
                 OwnerImage = ownerImage; Owner = owner; Element = element; svgToXml = xmlCounterpart; Name = svgToXml.Name;
                 foreach (XmlAttribute node in svgToXml.Attributes) Attributes.Add(node.Name); int i = 0;
-                foreach (XmlNode child in svgToXml.ChildNodes) if (child is XmlElement xE) SubElements.Add(new(ownerImage, this, Element.Children[i++], xE));
+                foreach (XmlNode child in svgToXml.ChildNodes) if (child is XmlElement xE && !IgnoreElement(svgToXml, xE))
+                    { SubElements.Add(new(ownerImage, this, Element.Children[i], xE)); i++; }
             }
-            /// <summary>Gets or sets an attribute by its name. <b>If you're creating a new attribute, the SVG becomes outdated.</b></summary>
+            static bool IgnoreElement(XmlElement owner, XmlElement child) => owner.Name switch
+            {
+                "defs" => child.Name switch { "bx:grid" => true, _ => false },
+                _ => false
+            };
+            /// <summary>Some elements may contain an attribute (such as "style") that packs multiple attributes into one. This method dissects it back.</summary>
+            /// <param name="key">The attribute to be dissected.</param>
+            /// <param name="overrideExisting">Override existing attributes by the new and dissected ones.</param>
+            /// <remarks>This method outdates the image.</remarks>
+            public void DissectAttribute(string key, bool overrideExisting = true)
+            {
+                if (!Attributes.Contains(key)) return; string origin = this[key], rKey = string.Empty, rValue;
+                int index = SkipSpaces(origin, 0); RemoveAttribute(key);
+                for (int i = index; i < origin.Length; ++i) switch (origin[i])
+                    {
+                        case ':': rKey = origin[index..i]; i = SkipSpaces(origin, i + 1); index = i; break;
+                        case ';': rValue = origin[index..i]; if (overrideExisting || !svgToXml.HasAttribute(rKey)) this[rKey] = rValue;
+                            i = SkipSpaces(origin, i + 1); index = i; break;
+                        default: break;
+                    }
+            }
+            static int SkipSpaces(string text, int index) { for (; index < text.Length; index++) if (text[index] != ' ') break; return index; }
+            /// <summary>Gets or sets an attribute by its name.</summary>
+            /// <remarks>This method outdates the image.</remarks>
             public string this[string key]
             {
                 get => svgToXml.GetAttribute(key); set
@@ -127,7 +156,13 @@ namespace Ensoftener
                     else Element.SetAttributeValue(key, SvgAttributeStringType.Svg, value);
                 }
             }
-            public void RemoveAttribute(string key) { svgToXml.RemoveAttribute(key); Element.RemoveAttribute(key); Attributes.Remove(key); }
+            /// <summary>Gets an attribute by its name and returns <paramref name="defaultValue"/> if nothing is found.</summary>
+            /// <remarks>If you're trying to get a shape's coordinates, you might want to use this with <paramref name="defaultValue"/> set to 0.
+            /// Some SVG editors like Boxy leave out this attribute if the shape is located at (0, 0) and same thing could happen in other cases as well.</remarks>
+            public string this[string key, string defaultValue]
+            { get { string result = svgToXml.GetAttribute(key); return string.IsNullOrEmpty(result) ? defaultValue : result; } }
+            public void RemoveAttribute(string key)
+            { svgToXml.RemoveAttribute(key); if (Element.IsAttributeSpecified(key, out _)) Element.RemoveAttribute(key); Attributes.Remove(key); }
             public void AddElement(string name)
             {
                 XmlElement XMLE = OwnerImage.DocumentAsXml.CreateElement(name);
