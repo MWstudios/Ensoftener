@@ -117,13 +117,13 @@
         <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
             <summary>Gets the device context's drawing rectangle.</summary>
         </member>
-        <member name="T:Ensoftener.ShadedEffectBase">
+        <member name="T:Ensoftener.PixelShaderBase">
             <summary>
             A prefabricated effect inherited from <seealso cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer and its nodes.
             <br/>You can even nest more effects inside it, which then can work with 32-bit float color depth.
             </summary>
         </member>
-        <member name="M:Ensoftener.ShadedEffectBase.#ctor(System.Guid)">
+        <member name="M:Ensoftener.PixelShaderBase.#ctor(System.Guid)">
             <summary>Initializes a new custom effect.</summary>
             <param name="guid">The GUID of the effect. Each GUID has one pixel shader assigned to it,
             hence the <see cref="T:Ensoftener.CloneablePixelShader"/>'s ability to have different pixel shaders.</param>
@@ -186,6 +186,36 @@
             <summary>Gets an attribute by its name and returns <paramref name="defaultValue"/> if nothing is found.</summary>
             <remarks>If you're trying to get a shape's coordinates, you might want to use this with <paramref name="defaultValue"/> set to 0.
             Some SVG editors like Boxy leave out this attribute if the shape is located at (0, 0) and same thing could happen in other cases as well.</remarks>
+        </member>
+        <member name="T:Ensoftener.Sound.WMPSound">
+            <summary>A simplified version of <see cref="T:WMPLib.WindowsMediaPlayer"/> that's easier to understand.
+            You also don't need to include the WMPLib namespace which would normally require specifying
+            <b>&lt;UseWindowsForms&gt;true&lt;/UseWindowsForms&gt;</b> in your .csproj file.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.FilePath">
+            <summary>The location of the sound. It can be a local file or a website URL.</summary>
+            <remarks>On Chrome, website sound file will appear as a black page with a small player in the middle. If that's the case, then you've got the sound's URL.</remarks>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Volume">
+            <summary>Volume of the sound between 0 and 100.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Speed">
+            <summary>Speed of the sound, without changed pitch. 1 is normal.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Position">
+            <summary>Position of the sound player, in seconds.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Balance">
+            <summary>Balance of the sound.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Loop">
+            <summary>Looping of the sound.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Metadata">
+            <summary></summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Length">
+            <summary>Length of the sound, in seconds.</summary>
         </member>
     </members>
 </doc>
