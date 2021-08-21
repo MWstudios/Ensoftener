@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using SharpDX;
 using SharpDX.DXGI;
 using SharpDX.Direct2D1;
+
 using DWFactory = SharpDX.DirectWrite.Factory;
 using AlphaMode = SharpDX.Direct2D1.AlphaMode;
 using DriverType = SharpDX.Direct3D.DriverType;
@@ -33,7 +34,7 @@ namespace Ensoftener
         public static string ShaderFile { get; set; }
         public static SharpDX.Windows.RenderForm Form { get; set; }
         /// <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
-        public static SharpDX.Direct2D1.Factory2 D2DFactory { get; private set; }
+        public static SharpDX.Direct2D1.Factory1 D2DFactory { get; private set; }
         /// <remarks>Based on D3DDevice.</remarks>
         public static SharpDX.Direct2D1.Device D2DDevice { get; private set; }
         /// <remarks>Based either on a DXGIFactory or can be freely created.</remarks>
@@ -49,7 +50,7 @@ namespace Ensoftener
         /// <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
         public static WICFactory WICFactory { get; } = new();
         /// <summary>A list of all effects that were created.</summary> 
-        public static List<ShadedEffectBase> RegisteredEffects { get; } = new();
+        public static List<PixelShaderBase> RegisteredEffects { get; } = new();
         /// <summary>The index of the setup that will serve as the output and present its contents to the screen.</summary>
         public static int OutputDevice { get; private set; }
         /// <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
@@ -61,7 +62,7 @@ namespace Ensoftener
             if (parallelDevices < 1) parallelDevices = 1;
             D3DDevice = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             D2DDevice = new(D3DDevice.QueryInterface<SharpDX.DXGI.Device1>());
-            D2DFactory = D2DDevice.Factory.QueryInterface<SharpDX.Direct2D1.Factory2>(); D2DFactory.RegisterEffect<CloneablePixelShader>();
+            D2DFactory = D2DDevice.Factory.QueryInterface<SharpDX.Direct2D1.Factory1>(); D2DFactory.RegisterEffect<CloneablePixelShader>();
             dxgiScd = new()
             {
                 Width = Form.ClientSize.Width, Height = Form.ClientSize.Height, Format = Format.B8G8R8A8_UNorm,
@@ -69,7 +70,7 @@ namespace Ensoftener
                 Usage = Usage.RenderTargetOutput | Usage.ShaderInput | Usage.BackBuffer,
                 SwapEffect = SwapEffect.Sequential, Flags = SwapChainFlags.AllowModeSwitch
             };
-            Form.ResizeEnd += Resize; Input.Initialize();
+            Form.ResizeEnd += Resize; Input.Input.Initialize();
             DWriteFactory = new(SharpDX.DirectWrite.FactoryType.Isolated);
             SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
             FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
@@ -135,8 +136,8 @@ namespace Ensoftener
         /// <param name="effects">The array of effects to render.</param>
         public static DeviceContext RenderScreenShaders(this DeviceContext d2dc, EffectTransformer transform = null, params Effect[] effects)
         {
-            Bitmap result = d2dc.GetScreenGPURead(); effects[0].SetInput(0, result, true);
-            for (int i = 1; i < effects.Length; ++i) effects[i].SetInputEffect(0, effects[i - 1], true);
+            Bitmap result = d2dc.GetScreenGPURead(); effects[0].SetInput(0, result, false);
+            for (int i = 1; i < effects.Length; ++i) effects[i].SetInputEffect(0, effects[i - 1], false);
             if (transform != null) { transform?.Handle.SetInputEffect(0, effects[^1]); d2dc.DrawEffectTransform(transform); } 
             else d2dc.DrawImage(effects[^1]); result?.Dispose(); return d2dc;
         }
@@ -164,9 +165,15 @@ namespace Ensoftener
             Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height);
             for (int i = 0; i < amount + 1; ++i)
             {
-                DCs.Add(new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
-                { RenderingControls = new() { BufferPrecision = useFloats ? BufferPrecision.PerChannel32Float : BufferPrecision.PerChannel8UNorm,
-                    TileSize = resizables.Contains(i) ? screen : sizes ?? screen } });
+                DCs.Add(new(D2DDevice.QueryInterface<SharpDX.Direct2D1.Device>(), DeviceContextOptions.EnableMultithreadedOptimizations)
+                {
+                    RenderingControls = new()
+                    {
+                        BufferPrecision = useFloats ? BufferPrecision.PerChannel32Float : BufferPrecision.PerChannel8UNorm,
+                        TileSize = resizables.Contains(i) ? screen : sizes ?? screen
+                    },
+                    UnitMode = UnitMode.Pixels
+                });
                 RenderTargets.Add(new(DCs[^1], DCs[^1].RenderingControls.TileSize, d2bI));
             }
         }
@@ -184,7 +191,7 @@ namespace Ensoftener
         public static void EndRender()
         {
             FinalDC.ChainBeginDraw().ChainClear(new(0, 0, 0, 1)).ChainDrawImage(RenderTargets[OutputDevice]).EndDraw();
-            SwapChain.Present(1, PresentFlags.None, new()); Input.Update();
+            SwapChain.Present(1, PresentFlags.None, new()); Input.Input.Update();
         }
         /// <summary>Disposes of a setup and removes it from the lists.</summary>
         public static void RemoveSetup(int index)
@@ -200,7 +207,6 @@ namespace Ensoftener
             int index = DCs.IndexOf(d2dc);
             if (set) { if (!resizables.Contains(index)) resizables.Add(index); } else resizables.Remove(index);
         }
-        //static Size2 Tileify(Size2 size) => new((int)Math.Pow(2, Math.Ceiling(Math.Log2(size.Width))), (int)Math.Pow(2, Math.Ceiling(Math.Log2(size.Height))));
         /// <summary>Adds an object to the end of the <seealso cref="List{T}"/> only if the object isn't already present.</summary>
         public static void AddIfMissing<T>(this List<T> list, T item) { if (!list.Contains(item)) list.Add(item); }
         /// <summary>Copies all contents of a <seealso cref="List{T}"/> into a new <seealso cref="List{T}"/>.</summary>
