@@ -117,6 +117,9 @@
         <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
             <summary>Gets the device context's drawing rectangle.</summary>
         </member>
+        <member name="T:Ensoftener.Input.XboxInput">
+            <summary></summary>
+        </member>
         <member name="T:Ensoftener.PixelShaderBase">
             <summary>
             A prefabricated effect inherited from <seealso cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer and its nodes.
