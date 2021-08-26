@@ -6,10 +6,12 @@ And that's when Ensoftener comes to play. It serves as an automation that simpli
 ## Features
 * Multiple render targets and device contexts
 * 32-bit float color depth for all renders
+* Loading bitmap from a file without WIC
 * Copying screen to a bitmap or applying a shader to the whole screen
 * Better control over SVG images and their elements
 * New `DeviceContext` extension methods that allow for chaining
-* A set up pixel shader template ready for rendering
+* A set up pixel shader, vertex shader and a compute shader template ready for rendering
 * An additional `Input` class containg all keyboard + mouse inputs
+* A `WMPSound` class that simplifies playing sound with `WindowsMediaPlayer`
 
 See the wiki for tutorials on how to install and use this library.
