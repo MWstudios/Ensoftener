@@ -69,7 +69,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Ensoftener.zip" />
     <None Remove="frac × 4.pdn" />
     <None Remove="semantics.pdn" />
   </ItemGroup>
