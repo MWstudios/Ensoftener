@@ -26,7 +26,7 @@ namespace Ensoftener
         { this.transformGraph = transformGraph; InputCount = transformGraph.InputCount; transformGraph.SetSingleTransformNode(this); }
         public void SetComputeInformation(ComputeInformation computeInfo)
         {
-            cInfo = computeInfo; cInfo.SetComputeShader(GUID);
+            cInfo = computeInfo; cInfo.ComputeShader = GUID;
             cInfo.SetOutputBuffer(BufferPrecision.PerChannel32Float, ChannelDepth.Four);
             cInfo.SetInputDescription(0, new InputDescription(GetSampling, 1));
         }
@@ -38,12 +38,8 @@ namespace Ensoftener
             for (int i = 0; i < inputRects.Length; ++i) inputRects[i] = new(outputRect.Left - (int)BorderExpansion.X,
                 outputRect.Top - (int)BorderExpansion.Y, outputRect.Right + (int)BorderExpansion.Z, outputRect.Bottom + (int)BorderExpansion.W);
         }
-        /// <summary>The amount of threads that will run on the GPU. Maximum is [X, Y, 1] (where X * Y = 768) on Shader Model 4
-        /// and [X, Y, 64] (where X * Y * Z = 1024) on Shader Model 5 and newer.</summary>
-        /// <param name="outputRect">The image rectangle.</param>
-        /// <remarks>Imagine the GPU as a 3D cube formed by smaller processors, where by <see cref="RawInt3(int, int, int)"/>
-        /// you split the cube into X, Y and Z amount of threads. For example, you have a 200x200 texture and you split the shader into [10, 10, 1] threads.
-        /// In this case, each thread can process a 20x20 image cut from the original texture.</remarks>
+        /// <summary>The amount of tiles of the image to render. The tile size is specified by the [numthreads] attribute in the compute shader, in pixels.</summary>
+        /// <remarks>If your tiles don't cover the whole image, only a portion of the image will render.</remarks>
         public virtual RawInt3 CalculateThreadgroups(RawRectangle outputRect) => new(1, 1, 1);
         public int InputCount { get; set; }
         public Filter GetSampling => AnisotropicFiltering ? Filter.Anisotropic : ScaleDownSampling == SamplingFilter.Bilinear ?

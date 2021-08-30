@@ -204,10 +204,5 @@ namespace Ensoftener
         /// <summary>Gets the device context's drawing rectangle.</summary>
         public static RectangleF ScreenRectangle(this DeviceContext d2dc) => new(0, 0, d2dc.Size.Width, d2dc.Size.Height);
         public static Size2 ToSize2(this Size2F size) => new((int)size.Width, (int)size.Height);
-        [DllImport("EnsoftenerCpp.dll", CallingConvention = CallingConvention.Cdecl)] static extern Result SetComputeShader(IntPtr cInfo, Guid guid);
-        [DllImport("EnsoftenerCpp.dll", CallingConvention = CallingConvention.Cdecl)] public static extern uint InteropTest();
-        /// <summary>Assigns a compute shader to a GUID. This feature was missing in SharpDX and is added by Ensoftener's C++ library.
-        /// Supports both 64-bit and 32-bit architecture.</summary>
-        public static void SetComputeShader(this ComputeInformation cInfo, Guid guid) => SetComputeShader(cInfo.NativePointer, guid);
     }
 }

@@ -9,7 +9,6 @@
 
 extern "C"
 {
-	ENSOFTENER_API HRESULT SetComputeShader(ID2D1ComputeInfo* cInfo, GUID guid);
 
 	ENSOFTENER_API HRESULT RegisterEffectFromString(ID2D1Factory1* factory, GUID guid, PCWSTR string,
 		D2D1_PROPERTY_BINDING* bindings, UINT bindingLength, PD2D1_EFFECT_FACTORY eFactory);

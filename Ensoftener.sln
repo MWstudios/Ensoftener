@@ -8,7 +8,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ensoftener", "Ensoftener.cs
 		{5508E7AE-C869-4AD4-938A-45868BD1F59C} = {5508E7AE-C869-4AD4-938A-45868BD1F59C}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EnsoftenerCpp", "..\EnsoftenerCpp\EnsoftenerCpp.vcxproj", "{5508E7AE-C869-4AD4-938A-45868BD1F59C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EnsoftenerCpp", "EnsoftenerCpp\EnsoftenerCpp.vcxproj", "{5508E7AE-C869-4AD4-938A-45868BD1F59C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

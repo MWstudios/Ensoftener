@@ -13,12 +13,8 @@
             <param name="guid">The GUID of the effect. Each GUID has one compute shader assigned to it.</param>
         </member>
         <member name="M:Ensoftener.ComputeShaderBase.CalculateThreadgroups(SharpDX.Mathematics.Interop.RawRectangle)">
-            <summary>The amount of threads that will run on the GPU. Maximum is [X, Y, 1] (where X * Y = 768) on Shader Model 4
-            and [X, Y, 64] (where X * Y * Z = 1024) on Shader Model 5 and newer.</summary>
-            <param name="outputRect">The image rectangle.</param>
-            <remarks>Imagine the GPU as a 3D cube formed by smaller processors, where by <see cref="M:SharpDX.Mathematics.Interop.RawInt3.#ctor(System.Int32,System.Int32,System.Int32)"/>
-            you split the cube into X, Y and Z amount of threads. For example, you have a 200x200 texture and you split the shader into [10, 10, 1] threads.
-            In this case, each thread can process a 20x20 image cut from the original texture.</remarks>
+            <summary>The amount of tiles of the image to render. The tile size is specified by the [numthreads] attribute in the compute shader, in pixels.</summary>
+            <remarks>If your tiles don't cover the whole image, only a portion of the image will render.</remarks>
         </member>
         <member name="T:Ensoftener.Global">
             <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
@@ -127,10 +123,6 @@
         </member>
         <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
             <summary>Gets the device context's drawing rectangle.</summary>
-        </member>
-        <member name="M:Ensoftener.Global.SetComputeShader(SharpDX.Direct2D1.ComputeInformation,System.Guid)">
-            <summary>Assigns a compute shader to a GUID. This feature was missing in SharpDX and is added by Ensoftener's C++ library.
-            Supports both 64-bit and 32-bit architecture.</summary>
         </member>
         <member name="T:Ensoftener.Input.XboxInput">
             <summary>The class that provides everything necessary for working with Xbox controllers.</summary>
