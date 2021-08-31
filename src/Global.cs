@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using SharpDX;
 using SharpDX.DXGI;
 using SharpDX.Direct2D1;
@@ -17,7 +16,7 @@ namespace Ensoftener
     /// <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
     public static class Global
     {
-        static SwapChainDescription1 dxgiScd; static BitmapProperties1 d2bFinal,// = new(new(PixelFormat, AlphaMode.Premultiplied));
+        static SwapChainDescription1 dxgiScd; readonly static BitmapProperties1 d2bFinal,// = new(new(PixelFormat, AlphaMode.Premultiplied));
             d2bI = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
         static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget;
         /// <summary>The final device context that renders on screen, and the only one that uses byte color depth.

@@ -29,6 +29,7 @@ namespace Ensoftener
             cInfo = computeInfo; cInfo.ComputeShader = GUID;
             cInfo.SetOutputBuffer(BufferPrecision.PerChannel32Float, ChannelDepth.Four);
             cInfo.SetInputDescription(0, new InputDescription(GetSampling, 1));
+            cInfo.InstructionCountHint = 0;
         }
         public virtual RawRectangle MapInvalidRect(int inputIndex, RawRectangle invalidInputRect) => invalidInputRect;
         public virtual RawRectangle MapInputRectanglesToOutputRectangle(RawRectangle[] inputRects, RawRectangle[] inputOpaqueSubRects, out RawRectangle outputOpaqueSubRect)
