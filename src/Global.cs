@@ -16,9 +16,10 @@ namespace Ensoftener
     /// <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
     public static class Global
     {
-        static SwapChainDescription1 dxgiScd; readonly static BitmapProperties1 d2bFinal,// = new(new(PixelFormat, AlphaMode.Premultiplied));
-            d2bI = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
+        static SwapChainDescription1 dxgiScd; readonly static BitmapProperties1 d2bFinal; // = new(new(PixelFormat, AlphaMode.Premultiplied));
         static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget;
+        /// <summary>The bitmap properties used for rendering. If you're creating a new bitmmap, use these as a parameter.</summary>
+        public static readonly BitmapProperties1 BitmapProperties = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
         /// <summary>The final device context that renders on screen, and the only one that uses byte color depth.
         /// Updates after <b><see cref="EndRender"/></b> is called.</summary>
         /// <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="GetScreenCPURead"/></b> on this context
@@ -26,11 +27,12 @@ namespace Ensoftener
         /// <b><see cref="Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
         /// which takes about half a second. Since the final context's pixel format is <b><see cref="Format.B8G8R8A8_UNorm"/></b>, it's the easiest and fastest to copy.</remarks>
         public static DeviceContext FinalDC { get; private set; }
-        public static Format PixelFormat { get => d2bI.PixelFormat.Format; set => d2bI.PixelFormat.Format = value; }
+        public static Format PixelFormat { get => BitmapProperties.PixelFormat.Format; set => BitmapProperties.PixelFormat.Format = value; }
         /// <summary><b><see cref="SwapChain"/></b>'s creation specs (in case you need them).</summary>
         public static SwapChainDescription1 SwapChainDescription => dxgiScd;
         /// <summary>A .cso file that will be loaded by every effect that's created from now on. One shader class can have different pixel shaders for every instance.</summary>
         public static string ShaderFile { get; set; }
+        public static string VertexShaderFile { get; set; }
         public static SharpDX.Windows.RenderForm Form { get; set; }
         /// <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
         public static SharpDX.Direct2D1.Factory1 D2DFactory { get; private set; }
@@ -42,11 +44,12 @@ namespace Ensoftener
         public static SwapChain1 SwapChain { get; private set; }
         public class DrawingSetup
         {
-            bool resize;
+            bool resize; Bitmap1 rt;
             /// <summary>The DeviceContext used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
             public DeviceContext DC { get; private set; }
-            /// <summary>The render target of the DeviceContext.</summary><remarks>Based on DeviceContext.</remarks>
-            public Bitmap1 RenderTarget { get; private set; }
+            /// <summary>The render target of the DeviceContext. Any changes of the target will apply to the device context as well.</summary>
+            /// <remarks>Based on DeviceContext.</remarks>
+            public Bitmap1 RenderTarget { get => rt; set { rt = value; DC.Target = value; } }
             /// <summary>Set this context to be resizable with the screen.</summary>
             public bool ResizeWithScreen { get => resize; set { if (value && !resize) Resize(new(Form.ClientSize.Width, Form.ClientSize.Height)); resize = value; } }
             /// <summary>Adds a new rendering setup.</summary>
@@ -68,14 +71,34 @@ namespace Ensoftener
                     },
                     UnitMode = UnitMode.Pixels
                 };
-                RenderTarget = new(DC, DC.RenderingControls.TileSize, d2bI);
+                RenderTarget = new(DC, DC.RenderingControls.TileSize, BitmapProperties);
             }
             public void Resize(Size2 size)
             {
                 DC.RenderingControls = new() { BufferPrecision = DC.RenderingControls.BufferPrecision, TileSize = size };
-                PixelFormat = RenderTarget.PixelFormat.Format; RenderTarget.Dispose(); RenderTarget = new(DC, size, d2bI);
+                PixelFormat = RenderTarget.PixelFormat.Format; RenderTarget.Dispose(); RenderTarget = new(DC, size, BitmapProperties);
             }
             public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); }
+            /// <summary>Batch renders an array of effects applied to the entire screen.</summary>
+            /// <param name="effects">The array of effects to render.</param>
+            public DeviceContext RenderScreenShaders(bool tileCorrection, params Effect[] effects)
+            {
+                if (tileCorrection)
+                {
+                    Bitmap1 result = new(DC, new Size2(Form.ClientSize.Width, Form.ClientSize.Height), BitmapProperties), save, origin = RenderTarget;
+                    for (int i = 0; i < effects.Length; ++i)
+                    { save = RenderTarget; effects[i].SetInput(0, save, false); RenderTarget = result; DC.DrawImage(effects[i]); result = save; }
+                    if (RenderTarget != origin) { result = RenderTarget; RenderTarget = origin; DC.DrawImage(result); }
+                    result?.Dispose();
+                }
+                else
+                {
+                    Bitmap result = DC.GetScreenGPURead(); effects[0].SetInput(0, result, false);
+                    for (int i = 1; i < effects.Length; ++i) effects[i].SetInputEffect(0, effects[i - 1], false);
+                    DC.DrawImage(effects[^1]); result?.Dispose();
+                }
+                return DC;
+            }
         }
         public static List<DrawingSetup> Setups { get; } = new();
         /// <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
@@ -110,7 +133,8 @@ namespace Ensoftener
             FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
             { RenderingControls = new() { TileSize = new(Form.ClientSize.Width, Form.ClientSize.Height) } };
             FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
-            for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, false, true)); OutputSetup = Setups[0];
+            for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, false, true));
+            OutputSetup = Setups[0];
         }
         /// <summary>Creates a SharpDX Bitmap off of an image file.</summary>
         public static Bitmap LoadBitmapFromFile(this DeviceContext deviceContext, string filename)
@@ -166,13 +190,6 @@ namespace Ensoftener
             Rectangle sourceRect = source ?? new(0, 0, Form.ClientSize.Width, Form.ClientSize.Height);
             Bitmap result = new(d2dc, new(sourceRect.Width, sourceRect.Height), new(d2dc.PixelFormat));
             result.CopyFromRenderTarget(d2dc, destination ?? new(0, 0), sourceRect); return result;
-        }
-        /// <summary>Batch renders an array of effects applied to the entire screen.</summary><param name="effects">The array of effects to render.</param>
-        public static DeviceContext RenderScreenShaders(this DeviceContext d2dc, params Effect[] effects)
-        {
-            Bitmap result = d2dc.GetScreenGPURead(); effects[0].SetInput(0, result, false);
-            for (int i = 1; i < effects.Length; ++i) effects[i].SetInputEffect(0, effects[i - 1], false);
-            d2dc.DrawImage(effects[^1]); result?.Dispose(); return d2dc;
         }
         public static DeviceContext5 DrawSvgDocument(this DeviceContext5 d2dc, SvgImage svg) { d2dc.DrawSvgDocument(svg.Document); return d2dc; }
         public static void Resize(object sender = null, EventArgs e = null)
