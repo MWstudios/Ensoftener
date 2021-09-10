@@ -43,6 +43,9 @@ using SharpDX.Direct2D1;
 namespace Ensoftener
 {
     /// <summary>A SVG image that can be modified at runtime.</summary>
+    /// <remarks>If you're planning to apply position, rotation and scale to your SVG, make sure that all shapes in the SVG are grouped by &lt;g&gt; elements.
+    /// Some editors don't group them by default, in which case you have to group them. On the other hand, make sure the editor didn't already apply a transform to the groups,
+    /// because that's going to be overriden.</remarks>
     public class SvgImage : IDisposable
     {
         float x, y, rotation, width = 1, height = 1; Matrix3x2 matrix = new(); bool disposedValue, outdated; XmlDocument DocumentAsXml; readonly DeviceContext5 DeviceContext;
@@ -113,7 +116,7 @@ namespace Ensoftener
         {
             readonly XmlElement svgToXml; readonly SvgElement Element; bool disposedValue;
             public SvgImage OwnerImage { get; } public SvgElement1 Owner { get; } public string Name => svgToXml.Name;
-            public string InlineText { get => svgToXml.InnerText; set => svgToXml.InnerText = value; }
+            public string InlineText { get => svgToXml.InnerText; set { svgToXml.InnerText = value; Element.SetTextValue(value, 1); } }
             public List<SvgElement1> SubElements { get; private set; } = new();
             /// <summary>Gets all attribute names that exist in this element.</summary>
             public List<string> Attributes { get; private set; } = new();

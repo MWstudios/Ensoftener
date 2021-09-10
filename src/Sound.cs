@@ -14,20 +14,12 @@ namespace Ensoftener.Sound
     internal interface ISoundGeneric
     {
         /// <summary>Volume of the sound between 0 and 1.</summary>
-        public double Volume { get; set; }
-        /// <summary>Speed of the sound, without changed pitch. 1 is normal.</summary>
-        public double Speed { get; set; }
-        /// <summary>Position of the sound player, in seconds.</summary>
-        public double Position { get; set; }
-        /// <summary>Balance of the sound. -1 is on the left speaker, 1 is on the right speaker.</summary>
-        public double Balance { get; set; }
-        /// <summary>Looping of the sound.</summary>
-        public bool Loop { get; set; }
-        /// <summary>Length of the sound, in seconds.</summary>
-        public double Length { get; }
-        public abstract void Play();
-        public abstract void Pause();
-        public abstract void Stop();
+        public double Volume { get; set; } /// <summary>Speed of the sound, without changed pitch. 1 is normal.</summary>
+        public double Speed { get; set; } /// <summary>Position of the sound player, in seconds.</summary>
+        public double Position { get; set; } /// <summary>Balance of the sound. -1 is on the left speaker, 1 is on the right speaker.</summary>
+        public double Balance { get; set; } /// <summary>Looping of the sound.</summary>
+        public bool Loop { get; set; } /// <summary>Length of the sound, in seconds.</summary>
+        public double Length { get; } public abstract void Play(); public abstract void Pause(); public abstract void Stop(); public void Dispose() { }
     }
     /// <summary>A simplified version of <see cref="WindowsMediaPlayer"/> that's easier to understand.
     /// You also don't need to include the WMPLib namespace which would normally require specifying
@@ -57,6 +49,7 @@ namespace Ensoftener.Sound
         }
         /// <summary>Length of the sound, in seconds.</summary><remarks>This value only works when the sound is playing.</remarks>
         public double Length => Sound.currentMedia.duration;
+        /// <exception cref="FileNotFoundException"/>
         public WMPSound(string path) { if (!File.Exists(path)) throw new FileNotFoundException(); FilePath = path; Sound.settings.autoStart = false; Stop(); }
         public void Play() => Sound.controls.play();
         public void Pause() => Sound.controls.pause();
@@ -76,6 +69,7 @@ namespace Ensoftener.Sound
         public double Balance { get => Sound.Balance; set => Sound.Balance = value; }
         public bool Loop { get; set; }
         public double Length => Sound.NaturalDuration.TimeSpan.TotalSeconds;
+        /// <exception cref="FileNotFoundException"/>
         public WPFSound(Uri path)
         {
             if (!File.Exists(path.AbsolutePath)) throw new FileNotFoundException();

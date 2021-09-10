@@ -18,7 +18,7 @@ namespace Ensoftener
     {
         static SwapChainDescription1 dxgiScd; readonly static BitmapProperties1 d2bFinal; // = new(new(PixelFormat, AlphaMode.Premultiplied));
         static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget;
-        /// <summary>The bitmap properties used for rendering. If you're creating a new bitmmap, use these as a parameter.</summary>
+        /// <summary>The bitmap properties used for rendering. If you're creating a new bitmap, use these as a parameter.</summary>
         public static readonly BitmapProperties1 BitmapProperties = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
         /// <summary>The final device context that renders on screen, and the only one that uses byte color depth.
         /// Updates after <b><see cref="EndRender"/></b> is called.</summary>
@@ -30,8 +30,11 @@ namespace Ensoftener
         public static Format PixelFormat { get => BitmapProperties.PixelFormat.Format; set => BitmapProperties.PixelFormat.Format = value; }
         /// <summary><b><see cref="SwapChain"/></b>'s creation specs (in case you need them).</summary>
         public static SwapChainDescription1 SwapChainDescription => dxgiScd;
-        /// <summary>A .cso file that will be loaded by every effect that's created from now on. One shader class can have different pixel shaders for every instance.</summary>
+        /// <summary>A .cso file that will be loaded by every <b>pixel or compute shader</b> created from now on.
+        /// One shader class can have different pixel shaders for every instance.</summary>
         public static string ShaderFile { get; set; }
+        /// <summary>A .cso file that will be loaded by every <b>vertex shader</b> created from now on.
+        /// One shader class can have different vertex shaders for every instance.</summary>
         public static string VertexShaderFile { get; set; }
         public static SharpDX.Windows.RenderForm Form { get; set; }
         /// <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
@@ -107,8 +110,8 @@ namespace Ensoftener
         public static WICFactory WICFactory { get; } = new();
         /// <summary>A list of all effects that were created.</summary> 
         public static List<CustomEffectBase> ExistingEffects { get; } = new();
-        /// <summary>The index of the setup that will serve as the output and present its contents to the screen.</summary>
         static DrawingSetup outSetup;
+        /// <summary>The setup that will serve as the output and present its contents to the screen.</summary>
         public static DrawingSetup OutputSetup { get => outSetup; private set { outSetup = value; outSetup.ResizeWithScreen = true; } }
         /// <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
         /// <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).

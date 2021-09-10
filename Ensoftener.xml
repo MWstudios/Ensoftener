@@ -20,7 +20,7 @@
             <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
         </member>
         <member name="F:Ensoftener.Global.BitmapProperties">
-            <summary>The bitmap properties used for rendering. If you're creating a new bitmmap, use these as a parameter.</summary>
+            <summary>The bitmap properties used for rendering. If you're creating a new bitmap, use these as a parameter.</summary>
         </member>
         <member name="P:Ensoftener.Global.FinalDC">
             <summary>The final device context that renders on screen, and the only one that uses byte color depth.
@@ -34,7 +34,12 @@
             <summary><b><see cref="P:Ensoftener.Global.SwapChain"/></b>'s creation specs (in case you need them).</summary>
         </member>
         <member name="P:Ensoftener.Global.ShaderFile">
-            <summary>A .cso file that will be loaded by every effect that's created from now on. One shader class can have different pixel shaders for every instance.</summary>
+            <summary>A .cso file that will be loaded by every <b>pixel or compute shader</b> created from now on.
+            One shader class can have different pixel shaders for every instance.</summary>
+        </member>
+        <member name="P:Ensoftener.Global.VertexShaderFile">
+            <summary>A .cso file that will be loaded by every <b>vertex shader</b> created from now on.
+            One shader class can have different vertex shaders for every instance.</summary>
         </member>
         <member name="P:Ensoftener.Global.D2DFactory">
             <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
@@ -80,8 +85,8 @@
         <member name="P:Ensoftener.Global.ExistingEffects">
             <summary>A list of all effects that were created.</summary> 
         </member>
-        <member name="F:Ensoftener.Global.outSetup">
-            <summary>The index of the setup that will serve as the output and present its contents to the screen.</summary>
+        <member name="P:Ensoftener.Global.OutputSetup">
+            <summary>The setup that will serve as the output and present its contents to the screen.</summary>
         </member>
         <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Nullable{SharpDX.Size2})">
             <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
@@ -235,6 +240,9 @@
         <member name="P:Ensoftener.Sound.WMPSound.Length">
             <summary>Length of the sound, in seconds.</summary><remarks>This value only works when the sound is playing.</remarks>
         </member>
+        <member name="M:Ensoftener.Sound.WMPSound.#ctor(System.String)">
+            <exception cref="T:System.IO.FileNotFoundException"/>
+        </member>
         <member name="T:Ensoftener.Sound.WPFSound">
             <summary>A variant of <see cref="T:System.Windows.Media.MediaPlayer"/> that's ported from WPF to Windows Forms.
             You also don't need to specify <b>&lt;UseWPF&gt;true&lt;/UseWPF&gt;</b> in your .csproj file.</summary>
@@ -242,6 +250,9 @@
         <member name="P:Ensoftener.Sound.WPFSound.FilePath">
             <summary>The location of the sound. It can be a local file or a website URL.</summary>
             <remarks>On Chrome, website sound file will appear as a black page with a small player in the middle. If that's the case, then you've got the sound's URL.</remarks>
+        </member>
+        <member name="M:Ensoftener.Sound.WPFSound.#ctor(System.Uri)">
+            <exception cref="T:System.IO.FileNotFoundException"/>
         </member>
         <member name="T:Ensoftener.Sound.MSDSound">
             <summary>A variant of Microsoft DirectSound's <see cref="T:Microsoft.DirectX.DirectSound.SecondaryBuffer"/>.</summary>
@@ -256,6 +267,9 @@
         </member>
         <member name="T:Ensoftener.SvgImage">
             <summary>A SVG image that can be modified at runtime.</summary>
+            <remarks>If you're planning to apply position, rotation and scale to your SVG, make sure that all shapes in the SVG are grouped by &lt;g&gt; elements.
+            Some editors don't group them by default, in which case you have to group them. On the other hand, make sure the editor didn't already apply a transform to the groups,
+            because that's going to be overriden.</remarks>
         </member>
         <member name="P:Ensoftener.SvgImage.UpdateIfOutdated">
             <summary>Rebuilds the SVG everytime the Outdated is set to true.</summary>
