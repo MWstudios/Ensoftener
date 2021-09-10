@@ -88,6 +88,7 @@ namespace Ensoftener.Sound
         public void Dispose() => Sound.Close();
     }
     /// <summary>A variant of Microsoft DirectSound's <see cref="SecondaryBuffer"/>.</summary>
+    /// <remarks><b>Non-functional on .NET 5, use <see cref="WMPSound"/> or <see cref="WPFSound"/> instead.</b></remarks>
     public class MSDSound : ISoundGeneric
     {
         public SecondaryBuffer Sound; int pausedPos; bool loop; double realFreq;

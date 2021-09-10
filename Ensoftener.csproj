@@ -67,11 +67,17 @@
 
   <ItemGroup>
     <Compile Remove="Form1 %283D%29.cs" />
+    <Compile Remove="src\PixelShaderBase.cs" />
+    <Compile Remove="src\VertexShaderBase.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Ensoftener.zip" />
     <None Remove="frac × 4.pdn" />
+    <None Remove="images\cs semantics.pdn" />
+    <None Remove="images\frac × 4.pdn" />
+    <None Remove="images\semantics.pdn" />
+    <None Remove="images\swizzle.pdn" />
     <None Remove="semantics.pdn" />
   </ItemGroup>
 

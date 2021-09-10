@@ -19,6 +19,9 @@
         <member name="T:Ensoftener.Global">
             <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
         </member>
+        <member name="F:Ensoftener.Global.BitmapProperties">
+            <summary>The bitmap properties used for rendering. If you're creating a new bitmmap, use these as a parameter.</summary>
+        </member>
         <member name="P:Ensoftener.Global.FinalDC">
             <summary>The final device context that renders on screen, and the only one that uses byte color depth.
             Updates after <b><see cref="M:Ensoftener.Global.EndRender"/></b> is called.</summary>
@@ -49,7 +52,8 @@
             <summary>The DeviceContext used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
         <member name="P:Ensoftener.Global.DrawingSetup.RenderTarget">
-            <summary>The render target of the DeviceContext.</summary><remarks>Based on DeviceContext.</remarks>
+            <summary>The render target of the DeviceContext. Any changes of the target will apply to the device context as well.</summary>
+            <remarks>Based on DeviceContext.</remarks>
         </member>
         <member name="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen">
             <summary>Set this context to be resizable with the screen.</summary>
@@ -62,6 +66,10 @@
             <br/><br/>Graphics-wise, floats are more useful, as they allow for colors to be "whiter than white" (or more than 1) and "blacker than black" (negative),
             which is useful for pixel shaders. <br/>Performance-wise, bytes are faster if you're converting to GDI bitmaps often, and require 4 times less memory.
             <br/>You won't need to use bytes unless you need to solve one of these two issues.</param>
+        </member>
+        <member name="M:Ensoftener.Global.DrawingSetup.RenderScreenShaders(System.Boolean,SharpDX.Direct2D1.Effect[])">
+            <summary>Batch renders an array of effects applied to the entire screen.</summary>
+            <param name="effects">The array of effects to render.</param>
         </member>
         <member name="P:Ensoftener.Global.DWriteFactory">
             <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
@@ -99,9 +107,6 @@
         <member name="M:Ensoftener.Global.GetScreenGPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
             <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
             <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
-        </member>
-        <member name="M:Ensoftener.Global.RenderScreenShaders(SharpDX.Direct2D1.DeviceContext,SharpDX.Direct2D1.Effect[])">
-            <summary>Batch renders an array of effects applied to the entire screen.</summary><param name="effects">The array of effects to render.</param>
         </member>
         <member name="M:Ensoftener.Global.BeginRender">
             <summary>Put this at the beginning of your render method.</summary>
@@ -163,14 +168,32 @@
         <member name="P:Ensoftener.Input.XboxInput.Controller4">
             <summary>The fourth controller that was plugged in.</summary>
         </member>
-        <member name="T:Ensoftener.PixelShaderBase">
-            <summary>A prefabricated effect inherited from <seealso cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer and its nodes.
-            <br/>You can even nest more effects inside it.</summary>
+        <member name="T:Ensoftener.PVShaderBase">
+            <summary>A more or less functional shader effect inherited from <see cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer, its nodes,
+            splittable data stream designed for passing vertices and the shader's semantics.</summary>
+            <remarks>The effect consists of a vertex shader and a pixel shader. The vertex shader stage deforms the bitmap via a triangular mesh and the pixel shader stage
+            can create additional color filters on top of the deformed triangles. Either can be turned off in the constructor, but disabling both may result in errors.
+            <br/>The vertex shader is still WIP - 100% functionality isn't guaranteed.</remarks>
         </member>
-        <member name="M:Ensoftener.PixelShaderBase.#ctor(System.Guid)">
+        <member name="M:Ensoftener.PVShaderBase.#ctor(System.Nullable{System.Guid},System.Nullable{System.Guid},System.Nullable{System.Guid},System.Boolean,System.Boolean)">
             <summary>Initializes a new custom effect.</summary>
-            <param name="guid">The GUID of the effect. Each GUID has one pixel shader assigned to it,
+            <param name="psGuid">The GUID of the effect. Each GUID has one pixel shader assigned to it,
             hence the <see cref="T:Ensoftener.CloneablePixelShader"/>'s ability to have different pixel shaders.</param>
+            <param name="vsGuid">The GUID of the vertex shader.</param>
+            <param name="vbGuid">The GUID of the vertex buffer. The vertex buffer contains values that will be passed to the shader, not the shader itself.</param>
+            <param name="usePS">Enable the pixel shader stage in this effect.</param>
+            <param name="useVS">Enable the vertex shader stage in this effect.</param>
+        </member>
+        <member name="P:Ensoftener.PVShaderBase.VsInBuffer">
+            <summary>The stream of values passed to what is <b>VsIn</b> in vertex shaders. Streams can be created off of arrays via
+            <see cref="M:SharpDX.DataStream.Create``1(``0[],System.Boolean,System.Boolean,System.Int32,System.Boolean)"/> (set <b>canRead</b> and <b>canWrite</b> to true!).
+            The extra int indicates the size of each value.</summary>
+            <remarks>A vertex buffer in vertex shaders works differently than a constant buffer in pixel shaders (if you're looking for an eqiuvalent, that's <b>b1</b>).
+            Here, the stream will be split into elements using the second int as a "stride". For example, you pass an array of <see cref="T:SharpDX.Vector2"/>
+            and <c>sizeof(Vector2)</c> as the integer. Direct2D will then split the stream using that integer and pass each value to the shader individually.</remarks>
+        </member>
+        <member name="P:Ensoftener.PVShaderBase.InputElements">
+            <summary>Returns an array of semantics that will then appear in the <b>VsIn</b> struct.</summary>
         </member>
         <member name="T:Ensoftener.CloneablePixelShader">
             <summary>A shader with no constant buffer, no inside effects and 1 texture input.
@@ -222,6 +245,7 @@
         </member>
         <member name="T:Ensoftener.Sound.MSDSound">
             <summary>A variant of Microsoft DirectSound's <see cref="T:Microsoft.DirectX.DirectSound.SecondaryBuffer"/>.</summary>
+            <remarks><b>Non-functional on .NET 5, use <see cref="T:Ensoftener.Sound.WMPSound"/> or <see cref="T:Ensoftener.Sound.WPFSound"/> instead.</b></remarks>
         </member>
         <member name="P:Ensoftener.Sound.MSDSound.Position">
             <summary>Position of the sound player, in seconds.</summary>
@@ -284,27 +308,6 @@
             <summary>Gets an attribute by its name and returns <paramref name="defaultValue"/> if nothing is found.</summary>
             <remarks>If you're trying to get a shape's coordinates, you might want to use this with <paramref name="defaultValue"/> set to 0.
             Some SVG editors like Boxy leave out this attribute if the shape is located at (0, 0) and same thing could happen in other cases as well.</remarks>
-        </member>
-        <member name="T:Ensoftener.VertexShaderBase">
-            <summary>A more or less functional vertex shader effect inherited from <see cref="T:SharpDX.Direct2D1.CustomEffectBase"/>. You can modify its input count, constant buffer, its nodes,
-            splittable data stream designed for passing vertices and the shader's semantics. <br/>The shader is still WIP -
-            passing texcoords to other pixel shaders is not supported and 100% functionality isn't guaranteed.</summary>
-        </member>
-        <member name="M:Ensoftener.VertexShaderBase.#ctor(System.Guid,System.Guid)">
-            <summary>Initializes a new custom effect.</summary>
-            <param name="shaderGuid">The GUID of the vertex shader.</param>
-            <param name="bufferGuid">The GUID of the vertex buffer. The vertex buffer contains values that will be passed to the shader, not the shader itself.</param>
-        </member>
-        <member name="P:Ensoftener.VertexShaderBase.VsInBuffer">
-            <summary>The stream of values passed to what is <b>VsIn</b> in vertex shaders. Streams can be created off of arrays via
-            <see cref="M:SharpDX.DataStream.Create``1(``0[],System.Boolean,System.Boolean,System.Int32,System.Boolean)"/> (set <b>canRead</b> and <b>canWrite</b> to true!).
-            The extra int indicates the size of each value.</summary>
-            <remarks>A vertex buffer in vertex shaders works differently than a constant buffer in pixel shaders (if you're looking for an eqiuvalent, that's <b>b1</b>).
-            Here, the stream will be split into elements using the second int as a "stride". For example, you pass an array of <see cref="T:SharpDX.Vector2"/>
-            and <c>sizeof(Vector2)</c> as the integer. Direct2D will then split the stream using that integer and pass each value to the shader individually.</remarks>
-        </member>
-        <member name="P:Ensoftener.VertexShaderBase.InputElements">
-            <summary>Returns an array of semantics that will then appear in the <b>VsIn</b> struct.</summary>
         </member>
     </members>
 </doc>

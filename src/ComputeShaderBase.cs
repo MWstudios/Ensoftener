@@ -20,10 +20,9 @@ namespace Ensoftener
         /// <summary>Initializes a new custom effect.</summary>
         /// <param name="guid">The GUID of the effect. Each GUID has one compute shader assigned to it.</param>
         public ComputeShaderBase(Guid guid) { GUID = guid; }
-        public override void Initialize(EffectContext effectContext, TransformGraph transformGraph)
-        { effectContext.LoadComputeShader(GUID, File.ReadAllBytes(Global.ShaderFile)); SetGraph(transformGraph); }
-        public override void SetGraph(TransformGraph transformGraph)
-        { this.transformGraph = transformGraph; InputCount = transformGraph.InputCount; transformGraph.SetSingleTransformNode(this); }
+        public override void Initialize(EffectContext effectContext, TransformGraph tg)
+        { effectContext.LoadComputeShader(GUID, File.ReadAllBytes(Global.ShaderFile)); SetGraph(tg); }
+        public override void SetGraph(TransformGraph tg) { transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
         public void SetComputeInformation(ComputeInformation computeInfo)
         {
             cInfo = computeInfo; cInfo.ComputeShader = GUID;
