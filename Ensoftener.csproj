@@ -12,7 +12,7 @@
     <Authors>MWstudios</Authors>
     <Product />
     <Platforms>AnyCPU;x64;x86</Platforms>
-    <Version>5</Version>
+    <Version>4.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
