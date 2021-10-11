@@ -74,6 +74,7 @@
         </member>
         <member name="M:Ensoftener.Global.DrawingSetup.RenderScreenShaders(System.Boolean,SharpDX.Direct2D1.Effect[])">
             <summary>Batch renders an array of effects applied to the entire screen.</summary>
+            <param name="tileCorrection"></param>
             <param name="effects">The array of effects to render.</param>
         </member>
         <member name="P:Ensoftener.Global.DWriteFactory">
@@ -222,27 +223,6 @@
         <member name="P:Ensoftener.Sound.ISoundGeneric.Length">
             <summary>Length of the sound, in seconds.</summary>
         </member>
-        <member name="T:Ensoftener.Sound.WMPSound">
-            <summary>A simplified version of <see cref="T:WMPLib.WindowsMediaPlayer"/> that's easier to understand.
-            You also don't need to include the WMPLib namespace which would normally require specifying
-            <b>&lt;UseWindowsForms&gt;true&lt;/UseWindowsForms&gt;</b> in your .csproj file.</summary>
-        </member>
-        <member name="P:Ensoftener.Sound.WMPSound.FilePath">
-            <summary>The location of the sound. It can be a local file or a website URL.</summary>
-            <remarks>On Chrome, website sound file will appear as a black page with a small player in the middle. If that's the case, then you've got the sound's URL.</remarks>
-        </member>
-        <member name="P:Ensoftener.Sound.WMPSound.Balance">
-            <remarks><b>This value does not work in this class.</b></remarks>
-        </member>
-        <member name="P:Ensoftener.Sound.WMPSound.Metadata">
-            <summary>Gets the song's metadata. This method requests all possible keys, so at the end you might get a dictionary of 100 empty keyvalues.</summary>
-        </member>
-        <member name="P:Ensoftener.Sound.WMPSound.Length">
-            <summary>Length of the sound, in seconds.</summary><remarks>This value only works when the sound is playing.</remarks>
-        </member>
-        <member name="M:Ensoftener.Sound.WMPSound.#ctor(System.String)">
-            <exception cref="T:System.IO.FileNotFoundException"/>
-        </member>
         <member name="T:Ensoftener.Sound.WPFSound">
             <summary>A variant of <see cref="T:System.Windows.Media.MediaPlayer"/> that's ported from WPF to Windows Forms.
             You also don't need to specify <b>&lt;UseWPF&gt;true&lt;/UseWPF&gt;</b> in your .csproj file.</summary>
@@ -253,17 +233,6 @@
         </member>
         <member name="M:Ensoftener.Sound.WPFSound.#ctor(System.Uri)">
             <exception cref="T:System.IO.FileNotFoundException"/>
-        </member>
-        <member name="T:Ensoftener.Sound.MSDSound">
-            <summary>A variant of Microsoft DirectSound's <see cref="T:Microsoft.DirectX.DirectSound.SecondaryBuffer"/>.</summary>
-            <remarks><b>Non-functional on .NET 5, use <see cref="T:Ensoftener.Sound.WMPSound"/> or <see cref="T:Ensoftener.Sound.WPFSound"/> instead.</b></remarks>
-        </member>
-        <member name="P:Ensoftener.Sound.MSDSound.Position">
-            <summary>Position of the sound player, in seconds.</summary>
-            <remarks>The position is internally converted from seconds to buffer bytes, so it might not be entirely accurate.</remarks>
-        </member>
-        <member name="P:Ensoftener.Sound.MSDSound.Length">
-            <remarks><b>This value does not work in this class.</b></remarks>
         </member>
         <member name="T:Ensoftener.SvgImage">
             <summary>A SVG image that can be modified at runtime.</summary>

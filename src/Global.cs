@@ -83,6 +83,7 @@ namespace Ensoftener
             }
             public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); }
             /// <summary>Batch renders an array of effects applied to the entire screen.</summary>
+            /// <param name="tileCorrection"></param>
             /// <param name="effects">The array of effects to render.</param>
             public DeviceContext RenderScreenShaders(bool tileCorrection, params Effect[] effects)
             {
