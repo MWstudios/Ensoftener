@@ -223,6 +223,27 @@
         <member name="P:Ensoftener.Sound.ISoundGeneric.Length">
             <summary>Length of the sound, in seconds.</summary>
         </member>
+        <member name="T:Ensoftener.Sound.WMPSound">
+            <summary>A simplified version of <see cref="T:WMPLib.WindowsMediaPlayer"/> that's easier to understand.
+            You also don't need to include the WMPLib namespace which would normally require specifying
+            <b>&lt;UseWindowsForms&gt;true&lt;/UseWindowsForms&gt;</b> in your .csproj file.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.FilePath">
+            <summary>The location of the sound. It can be a local file or a website URL.</summary>
+            <remarks>On Chrome, website sound file will appear as a black page with a small player in the middle. If that's the case, then you've got the sound's URL.</remarks>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Balance">
+            <remarks><b>This value does not work in this class.</b></remarks>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Metadata">
+            <summary>Gets the song's metadata. This method requests all possible keys, so at the end you might get a dictionary of 100 empty keyvalues.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.WMPSound.Length">
+            <summary>Length of the sound, in seconds.</summary><remarks>This value only works when the sound is playing.</remarks>
+        </member>
+        <member name="M:Ensoftener.Sound.WMPSound.#ctor(System.String)">
+            <exception cref="T:System.IO.FileNotFoundException"/>
+        </member>
         <member name="T:Ensoftener.Sound.WPFSound">
             <summary>A variant of <see cref="T:System.Windows.Media.MediaPlayer"/> that's ported from WPF to Windows Forms.
             You also don't need to specify <b>&lt;UseWPF&gt;true&lt;/UseWPF&gt;</b> in your .csproj file.</summary>

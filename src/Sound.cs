@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Media;
-//using System.Collections.Generic;
+using System.Collections.Generic;
 //using Microsoft.DirectX.DirectSound;
-//using WMPLib;
+using WMPLib;
 
 namespace Ensoftener.Sound
 {
@@ -24,7 +24,7 @@ namespace Ensoftener.Sound
     /// <summary>A simplified version of <see cref="WindowsMediaPlayer"/> that's easier to understand.
     /// You also don't need to include the WMPLib namespace which would normally require specifying
     /// <b>&lt;UseWindowsForms&gt;true&lt;/UseWindowsForms&gt;</b> in your .csproj file.</summary>
-    /*public class WMPSound : ISoundGeneric
+    public class WMPSound : ISoundGeneric
     {
         public WindowsMediaPlayer Sound = new();
         /// <summary>The location of the sound. It can be a local file or a website URL.</summary>
@@ -54,7 +54,7 @@ namespace Ensoftener.Sound
         public void Play() => Sound.controls.play();
         public void Pause() => Sound.controls.pause();
         public void Stop() => Sound.controls.stop();
-    }*/
+    }
     /// <summary>A variant of <see cref="MediaPlayer"/> that's ported from WPF to Windows Forms.
     /// You also don't need to specify <b>&lt;UseWPF&gt;true&lt;/UseWPF&gt;</b> in your .csproj file.</summary>
     public class WPFSound : ISoundGeneric
@@ -81,9 +81,9 @@ namespace Ensoftener.Sound
         public void Stop() => Sound.Stop();
         public void Dispose() => Sound.Close();
     }
-    /// <summary>A variant of Microsoft DirectSound's <see cref="SecondaryBuffer"/>.</summary>
+    /*/// <summary>A variant of Microsoft DirectSound's <see cref="SecondaryBuffer"/>.</summary>
     /// <remarks><b>Non-functional on .NET 5, use <see cref="WMPSound"/> or <see cref="WPFSound"/> instead.</b></remarks>
-    /*public class MSDSound : ISoundGeneric
+    public class MSDSound : ISoundGeneric
     {
         public SecondaryBuffer Sound; int pausedPos; bool loop; double realFreq;
         public string FilePath { get; set; }
