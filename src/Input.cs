@@ -30,7 +30,7 @@ namespace Ensoftener.Input
         static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e);
         public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128;
         public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1;
-        [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Cdecl)] static extern bool GetKeyboardState(byte[] lpKeyState);
+        [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern bool GetKeyboardState(byte[] lpKeyState);
         static void SetFlags(MouseEventArgs e) { mX = e.X; mY = e.Y; Scrolls = (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); }
     }
     /// <summary>The class that provides everything necessary for working with Xbox controllers.</summary>
@@ -68,9 +68,9 @@ namespace Ensoftener.Input
         public static XboxController Controller3 { get; } = new(2);
         /// <summary>The fourth controller that was plugged in.</summary>
         public static XboxController Controller4 { get; } = new(3);
-        [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         internal static extern int XInputGetState(int controller, ref XIStruct xInput);
-        [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         internal static extern int XInputSetState(int controller, ref XVStruct xVibrate);
         internal static void Update() { Controller1.Update(); Controller2.Update(); Controller3.Update(); Controller4.Update(); }
         public enum XboxButtons { DPadUp, DPadDown, DPadLeft, DPadRight, MenuButton, WindowButton, LeftJoystick, RightJoystick, LB, RB, A = 12, B = 13, X = 14, Y = 15 }
