@@ -114,11 +114,8 @@
             <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
             <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
         </member>
-        <member name="M:Ensoftener.Global.BeginRender">
-            <summary>Put this at the beginning of your render method.</summary>
-        </member>
         <member name="M:Ensoftener.Global.EndRender">
-            <summary>Put this at the end of your render method.</summary>
+            <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
         </member>
         <member name="M:Ensoftener.Global.RemoveSetup(System.Int32)">
             <summary>Disposes of a setup and removes it from the lists.</summary>

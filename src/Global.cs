@@ -27,7 +27,6 @@ namespace Ensoftener
         /// <b><see cref="Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
         /// which takes about half a second. Since the final context's pixel format is <b><see cref="Format.B8G8R8A8_UNorm"/></b>, it's the easiest and fastest to copy.</remarks>
         public static DeviceContext FinalDC { get; private set; }
-        public static Format PixelFormat { get => BitmapProperties.PixelFormat.Format; set => BitmapProperties.PixelFormat.Format = value; }
         /// <summary><b><see cref="SwapChain"/></b>'s creation specs (in case you need them).</summary>
         public static SwapChainDescription1 SwapChainDescription => dxgiScd;
         /// <summary>A .cso file that will be loaded by every <b>pixel or compute shader</b> created from now on.
@@ -52,7 +51,7 @@ namespace Ensoftener
             public DeviceContext DC { get; private set; }
             /// <summary>The render target of the DeviceContext. Any changes of the target will apply to the device context as well.</summary>
             /// <remarks>Based on DeviceContext.</remarks>
-            public Bitmap1 RenderTarget { get => rt; set { rt = value; DC.Target = value; } }
+            public Bitmap1 RenderTarget { get => rt; set => DC.Target = rt = value; }
             /// <summary>Set this context to be resizable with the screen.</summary>
             public bool ResizeWithScreen { get => resize; set { if (value && !resize) Resize(new(Form.ClientSize.Width, Form.ClientSize.Height)); resize = value; } }
             /// <summary>Adds a new rendering setup.</summary>
@@ -78,8 +77,8 @@ namespace Ensoftener
             }
             public void Resize(Size2 size)
             {
-                DC.RenderingControls = new() { BufferPrecision = DC.RenderingControls.BufferPrecision, TileSize = size };
-                PixelFormat = RenderTarget.PixelFormat.Format; RenderTarget.Dispose(); RenderTarget = new(DC, size, BitmapProperties);
+                DC.RenderingControls = new() { BufferPrecision = DC.RenderingControls.BufferPrecision, TileSize = new(64, 64) };
+                RenderTarget.Dispose(); RenderTarget = new(DC, size, BitmapProperties);
             }
             public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); }
             /// <summary>Batch renders an array of effects applied to the entire screen.</summary>
@@ -121,7 +120,7 @@ namespace Ensoftener
         public static void Initialize(int parallelDevices = 1, Size2? sizes = null)
         {
             if (parallelDevices < 1) parallelDevices = 1;
-            D3DDevice = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            D3DDevice = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport | DeviceCreationFlags.DisableGpuTimeout);
             D2DDevice = new(D3DDevice.QueryInterface<SharpDX.DXGI.Device1>());
             D2DFactory = D2DDevice.Factory.QueryInterface<SharpDX.Direct2D1.Factory1>(); D2DFactory.RegisterEffect<CloneablePixelShader>();
             dxgiScd = new()
@@ -136,7 +135,7 @@ namespace Ensoftener
             SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
             FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
             { RenderingControls = new() { TileSize = new(Form.ClientSize.Width, Form.ClientSize.Height) } };
-            FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
+            FinalDC.Target = FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
             for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, false, true));
             OutputSetup = Setups[0];
         }
@@ -200,17 +199,16 @@ namespace Ensoftener
         {
             Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height); dxgiScd.Width = screen.Width; dxgiScd.Height = screen.Height;
             for (int i = 0; i < Setups.Count; ++i) if (Setups[i].ResizeWithScreen) Setups[i].Resize(screen);
+            SwapChain.ContainingOutput.Dispose(); SwapChain.GetBackBuffer<Surface>(0).Dispose();
             SwapChain.Dispose(); SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
-            //SwapChain.ResizeBuffers(dxgiScd.BufferCount, Form.ClientSize.Width, Form.ClientSize.Height, PixelFormat, dxgiScd.Flags);
+            //SwapChain.ResizeBuffers(dxgiScd.BufferCount, Form.ClientSize.Width, Form.ClientSize.Height, dxgiScd.PixelFormat, dxgiScd.Flags);
             FinalDC.RenderingControls = new() { TileSize = screen };
             FinalTarget.Dispose(); FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
         }
-        /// <summary>Put this at the beginning of your render method.</summary>
-        public static void BeginRender() { for (int i = 0; i < Setups.Count; ++i) Setups[i].DC.Target = Setups[i].RenderTarget; FinalDC.Target = FinalTarget; }
-        /// <summary>Put this at the end of your render method.</summary>
+        /// <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
         public static void EndRender()
         {
-            FinalDC.ChainBeginDraw().ChainClear(new(0, 0, 0, 1)).ChainDrawImage(OutputSetup.RenderTarget).EndDraw();
+            FinalDC.Target = FinalTarget; FinalDC.ChainBeginDraw().ChainClear(new(0, 0, 0, 1)).ChainDrawImage(OutputSetup.RenderTarget).EndDraw();
             SwapChain.Present(1, PresentFlags.None, new()); Input.Input.Update();
         }
         /// <summary>Disposes of a setup and removes it from the lists.</summary>
