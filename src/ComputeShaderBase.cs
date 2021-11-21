@@ -22,9 +22,10 @@ namespace Ensoftener
         public ComputeShaderBase(Guid guid) { GUID = guid; }
         public override void Initialize(EffectContext effectContext, TransformGraph tg)
         { effectContext.LoadComputeShader(GUID, File.ReadAllBytes(Global.ShaderFile)); SetGraph(tg); }
-        public override void SetGraph(TransformGraph tg) { transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
+        public override void SetGraph(TransformGraph tg) { transformGraph?.Dispose(); transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
         public void SetComputeInformation(ComputeInformation computeInfo)
         {
+            cInfo?.Dispose();
             cInfo = computeInfo; cInfo.ComputeShader = GUID;
             cInfo.SetOutputBuffer(BufferPrecision.PerChannel32Float, ChannelDepth.Four);
             cInfo.SetInputDescription(0, new InputDescription(GetSampling, 1));

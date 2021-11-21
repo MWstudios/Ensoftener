@@ -67,7 +67,7 @@ namespace Ensoftener
         public virtual (DataStream, int) VsInBuffer => (null, 0);
         /// <summary>Returns an array of semantics that will then appear in the <b>VsIn</b> struct.</summary>
         public virtual InputElement[] InputElements => Array.Empty<InputElement>();
-        public override void SetGraph(TransformGraph tg) { transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
+        public override void SetGraph(TransformGraph tg) { transformGraph?.Dispose(); transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
         public Filter GetSampling => AnisotropicFiltering ? Filter.Anisotropic : ScaleDownSampling == SamplingFilter.Bilinear ?
             ScaleUpSampling == SamplingFilter.Bilinear ?
                 MipmapSampling == SamplingFilter.Bilinear ? Filter.MinimumMagMipLinear : Filter.MinimumMagLinearMipPoint :
@@ -77,6 +77,7 @@ namespace Ensoftener
                 MipmapSampling == SamplingFilter.Bilinear ? Filter.MinimumMagPointMipLinear : Filter.MinimumMagMipPoint;
         public void SetDrawInformation(DrawInformation drawInfo)
         {
+            dInfo?.Dispose();
             dInfo = drawInfo;
             if (pixelShader)
             {
