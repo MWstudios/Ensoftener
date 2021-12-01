@@ -16,8 +16,8 @@ namespace Ensoftener
     /// <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
     public static class Global
     {
-        static SwapChainDescription1 dxgiScd; readonly static BitmapProperties1 d2bFinal; // = new(new(PixelFormat, AlphaMode.Premultiplied));
-        static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget;
+        static SwapChainDescription1 dxgiScd;
+        static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget; static bool quit;
         /// <summary>The bitmap properties used for rendering. If you're creating a new bitmap, use these as a parameter.</summary>
         public static readonly BitmapProperties1 BitmapProperties = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
         /// <summary>The final device context that renders on screen, and the only one that uses byte color depth.
@@ -130,15 +130,41 @@ namespace Ensoftener
                 Usage = Usage.RenderTargetOutput | Usage.ShaderInput | Usage.BackBuffer,
                 SwapEffect = SwapEffect.Sequential, Flags = SwapChainFlags.AllowModeSwitch
             };
-            Form.ResizeEnd += Resize; Input.Input.Initialize();
+            Form.ResizeEnd += Resize; Input.Input.Initialize(); Sound.SoundGlobal.Initialize();
+            Form.FormClosing += (s, e) =>
+            {
+                foreach (var setup in Setups) setup.Dispose();
+                FinalDC.Dispose(); FinalTarget.Dispose(); FinalFactory.Dispose();
+                SwapChain.ContainingOutput.Dispose(); SwapChain.GetBackBuffer<Surface>(0).Dispose(); SwapChain.Dispose();
+                foreach (var effect in ExistingEffects) effect.Dispose();
+                foreach (var effect in D2DFactory.RegisteredEffects) D2DFactory.GetEffectProperties(effect).Dispose();
+                D2DDevice.ClearResources(int.MaxValue); D2DDevice.Dispose();
+                D3DDevice.ImmediateContext.Dispose(); D3DDevice.Dispose();
+                DWriteFactory.GdiInterop.Dispose(); DWriteFactory.Dispose();
+                WICFactory.Dispose(); Form.Dispose();
+            };
             DWriteFactory = new(SharpDX.DirectWrite.FactoryType.Isolated);
             SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
             FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
             { RenderingControls = new() { TileSize = new(Form.ClientSize.Width, Form.ClientSize.Height) } };
-            FinalDC.Target = FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
+            FinalDC.Target = FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), null);
             for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, false, true));
             OutputSetup = Setups[0];
         }
+        /// <summary>Starts displaying the window and runs the rendering loop.</summary>
+        /// <param name="RenderMethod">The method that will be called on each monitor refresh.</param>
+        /// <remarks><b>Do not use this for updating game logic!</b> The <b><paramref name="RenderMethod"/></b> is dependent on your monitor refresh rate
+        /// (60x or 144x per second). Instead, create a second thread that's called every 1/60th of a second.</remarks>
+        public static void Run(Action RenderMethod)
+        {
+            if (RenderMethod == null) return; Form.Show();
+            using SharpDX.Windows.RenderLoop renderLoop = new(Form);
+            while (renderLoop.NextFrame() && !quit) RenderMethod(); Form.Close();
+        }
+        /// <summary>Schedules a shutdown of the window. After the current rendering method ends, all sounds are stopped and components deleted.</summary>
+        /// <remarks>Windows doesn't allow for different threads to close a single window, which means the closure needs to be scheduled for later
+        /// and then executed by the window thread.</remarks>
+        public static void Quit() => quit = true;
         /// <summary>Creates a SharpDX Bitmap off of an image file.</summary>
         public static Bitmap LoadBitmapFromFile(this DeviceContext deviceContext, string filename)
         {
@@ -203,7 +229,7 @@ namespace Ensoftener
             SwapChain.Dispose(); SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
             //SwapChain.ResizeBuffers(dxgiScd.BufferCount, Form.ClientSize.Width, Form.ClientSize.Height, dxgiScd.PixelFormat, dxgiScd.Flags);
             FinalDC.RenderingControls = new() { TileSize = screen };
-            FinalTarget.Dispose(); FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), d2bFinal);
+            FinalTarget.Dispose(); FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), null);
         }
         /// <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
         public static void EndRender()
