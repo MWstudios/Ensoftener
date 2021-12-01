@@ -4,13 +4,29 @@ using System.Windows.Media;
 using System.Collections.Generic;
 //using Microsoft.DirectX.DirectSound;
 using WMPLib;
+using CSCore;
+using CSCore.SoundOut;
+using CSCore.CoreAudioAPI;
 
 namespace Ensoftener.Sound
 {
-    /*internal static class SoundGlobal
+    internal static class SoundGlobal
     {
-        public static Device Device { get; } = new();
-    }*/
+        public static MMDevice AudioIn { get; private set; }
+        public static MMDevice AudioOut { get; private set; }
+        public static List<CSWSound> CSWSounds { get; } = new();
+        public static void Initialize()
+        {
+            using MMDeviceEnumerator mmde = new();
+            AudioIn = mmde.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Multimedia);
+            AudioOut = mmde.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            Global.Form.FormClosed += (s, e) =>
+            {
+                while (CSWSounds.Count != 0) { CSWSounds[0].Stop(); CSWSounds[0].Dispose(); }
+                AudioOut?.Dispose(); AudioIn?.Dispose();
+            };
+        }
+    }
     internal interface ISoundGeneric
     {
         /// <summary>Volume of the sound between 0 and 1.</summary>
@@ -76,6 +92,12 @@ namespace Ensoftener.Sound
             FilePath = path;
             Sound.MediaEnded += (s, e) => { if (Loop) { Position = 0; Play(); } };
         }
+        public WPFSound(string path)
+        {
+            if (!File.Exists(path)) throw new FileNotFoundException();
+            FilePath = new(path);
+            Sound.MediaEnded += (s, e) => { if (Loop) { Position = 0; Play(); } };
+        }
         public void Play() => Sound.Play();
         public void Pause() => Sound.Pause();
         public void Stop() => Sound.Stop();
@@ -111,4 +133,100 @@ namespace Ensoftener.Sound
         public void Stop() => Sound.Stop();
         public void Dispose() => Sound.Dispose();
     }*/
+    public class CSWSound : ISoundGeneric
+    {
+        IWaveSource soundIn; public ISoundOut Sound; CSCore.DSP.DmoResampler stretcher, backStretcher;
+        string filepath; bool useDS; int Latency; double speed = 1, balance;
+        public CSWSoundModifier Modifier { get; private set; }
+        public double Volume { get => Sound?.Volume ?? 1; set => Sound.Volume = (float)value; }
+        /// <summary>Speed of the sound, with changed pitch. 1 is normal. Changing speed reloads all components (including the source file) and should be used sparingly</summary>
+        public double Speed { get => speed; set { speed = value; Initialize(true); } }
+        public double Position { get => soundIn.GetPosition().TotalSeconds; set => soundIn.SetPosition(TimeSpan.FromSeconds(value)); }
+        public double Balance
+        {
+            get => balance;
+            set
+            {
+                balance = value;
+                Modifier.vLtoL = value > 0 ? 1 - (float)value : 1; Modifier.vLtoR = value > 0 ? (float)value : 0;
+                Modifier.vRtoR = value < 0 ? (float)value + 1 : 1; Modifier.vRtoL = value < 0 ? -(float)value : 0;
+            }
+        }
+        public bool Loop { get => Modifier?.loop ?? false; set => Modifier.loop = value; }
+        public string FilePath { get => filepath; set { filepath = value; Initialize(true); } }
+        public double Length => soundIn.GetLength().TotalSeconds;
+        public CSWSound(string file, bool useDirectSound = false, int latency = 100)
+        { SoundGlobal.CSWSounds.Add(this); useDS = useDirectSound; Latency = latency; FilePath = file; }
+        void Initialize(bool changePath)
+        {
+            if (Modifier != null) { Modifier.hardStop = true;// while (!Modifier.hardStopResponse) ;
+            }
+            PlaybackState playing = Sound?.PlaybackState ?? PlaybackState.Stopped;
+            long pos = soundIn?.Position ?? 0; bool loop = Loop; double volume = Volume;
+            Func<float, float> modifier = Modifier?.Modifier;
+            Action<ISampleSource, CSWSoundModifier.CSWSoundSampleData> modifierAdvanced = Modifier?.ModifierAdvanced;
+            Sound?.Dispose(); backStretcher?.Dispose(); Modifier?.Dispose(); stretcher?.Dispose();
+            if (changePath) { soundIn?.Dispose(); soundIn = CSCore.Codecs.CodecFactory.Instance.GetCodec(FilePath); }
+            if (playing == PlaybackState.Playing || playing == PlaybackState.Paused) soundIn.Position = pos;
+            stretcher = new(soundIn, (int)(soundIn.WaveFormat.SampleRate * Speed));
+            Modifier = new(soundIn.ToSampleSource(), stretcher.ToSampleSource()) { Modifier = modifier, ModifierAdvanced = modifierAdvanced, loop = loop };
+            backStretcher = new(Modifier.ToWaveSource(), soundIn.WaveFormat.SampleRate);
+            Sound = useDS ? new DirectSoundOut() { Latency = Latency } : new WasapiOut() { Device = SoundGlobal.AudioOut, UseChannelMixingMatrices = true, Latency = Latency };
+            Sound.Initialize(backStretcher); Balance = balance; Volume = volume; if (playing == PlaybackState.Playing) Sound.Play();
+        }
+        public void Pause() => Sound.Pause();
+        public void Play() { Modifier.hardStop = false; if (Sound.PlaybackState == PlaybackState.Paused) Sound.Resume(); else Sound.Play(); }
+        public void Stop() { Modifier.hardStop = true; Sound?.Stop(); }
+        public void Dispose()
+        {
+            soundIn?.Dispose(); Modifier?.Dispose(); Sound?.Dispose(); stretcher?.Dispose(); backStretcher?.Dispose();
+            SoundGlobal.CSWSounds.Remove(this);
+        }
+        public class CSWSoundModifier : SampleAggregatorBase
+        {
+            internal float vLtoL = 1, vRtoR = 1, vLtoR = 0, vRtoL = 0;
+            internal bool loop, hardStop, hardStopResponse;
+            float[] previousBuffer;
+            /// <summary>Contains information about the audio stream.</summary>
+            public struct CSWSoundSampleData
+            {
+                /// <summary>The array of samples to be modified for this frame. Because the modifier is called every latency interval,
+                /// the array's length is usually the sample rate multiplied by latency (44100 * 0.1s = 4410).</summary>
+                public float[] Buffer;
+                public float[] PreviousBuffer;
+                public int Offset;
+                public int Count;
+                public int SamplesRead;
+                public CSWSoundSampleData(float[] buffer, float[] pBuffer, int offset, int count, int samplesRead)
+                { Buffer = buffer; PreviousBuffer = pBuffer; Offset = offset; Count = count; SamplesRead = samplesRead; }
+            }
+            readonly ISampleSource Source;
+            public CSWSoundModifier(ISampleSource source, ISampleSource source2) : base(source2) { Source = source ?? throw new ArgumentNullException(); }
+            public override int Read(float[] buffer, int offset, int count)
+            {
+                if (hardStop) { hardStopResponse = true; return 0; }
+                else hardStopResponse = false;
+                int samples = Source?.Read(buffer, offset, count) ?? 0;
+                ModifierAdvanced?.Invoke(Source, new(buffer, previousBuffer, offset, count, samples));
+                float vL, vR;
+                for (int i = offset; i < offset + count; i += 2)
+                {
+                    vL = buffer[i] * vLtoL + buffer[i + 1] * vRtoL; vR = buffer[i] * vLtoR + buffer[i + 1] * vRtoR;
+                    buffer[i] = Modifier?.Invoke(vL) ?? vL; buffer[i + 1] = Modifier?.Invoke(vR) ?? vR; 
+                }
+                previousBuffer = buffer;
+                if (loop && this.GetPosition() > this.GetLength() - TimeSpan.FromSeconds(previousBuffer.Length / (double)Source.WaveFormat.SampleRate)) Source.Position = 0;
+                return samples;
+            }
+            /// <summary>Modifies every sound wave that's being played.</summary>
+            public Func<float, float> Modifier { get; set; }
+            /// <summary>Like <b><see cref="Modifier"/></b>, modifies sound waves that are being played, except that this also recieves all of the streaming data,
+            /// including the direct access to the array of samples.</summary>
+            /// <remarks>To implement a working modifier, create a for loop that starts at the offset and ends at offset + count.
+            /// That way, you modify every relevant sample that actually plays in the speaker.</remarks>
+            public Action<ISampleSource, CSWSoundSampleData> ModifierAdvanced { get; set; }
+            public override long Position { get => Source.Position; set => Source.Position = value; }
+            public override long Length => Source.Length;
+        }
+    }
 }

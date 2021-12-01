@@ -95,6 +95,17 @@
             All components will be accessible from their lists. Cannot be less than 1.</param>
             <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
         </member>
+        <member name="M:Ensoftener.Global.Run(System.Action)">
+            <summary>Starts displaying the window and runs the rendering loop.</summary>
+            <param name="RenderMethod">The method that will be called on each monitor refresh.</param>
+            <remarks><b>Do not use this for updating game logic!</b> The <b><paramref name="RenderMethod"/></b> is dependent on your monitor refresh rate
+            (60x or 144x per second). Instead, create a second thread that's called every 1/60th of a second.</remarks>
+        </member>
+        <member name="M:Ensoftener.Global.Quit">
+            <summary>Schedules a shutdown of the window. After the current rendering method ends, all sounds are stopped and components deleted.</summary>
+            <remarks>Windows doesn't allow for different threads to close a single window, which means the closure needs to be scheduled for later
+            and then executed by the window thread.</remarks>
+        </member>
         <member name="M:Ensoftener.Global.LoadBitmapFromFile(SharpDX.Direct2D1.DeviceContext,System.String)">
             <summary>Creates a SharpDX Bitmap off of an image file.</summary>
         </member>
@@ -251,6 +262,25 @@
         </member>
         <member name="M:Ensoftener.Sound.WPFSound.#ctor(System.Uri)">
             <exception cref="T:System.IO.FileNotFoundException"/>
+        </member>
+        <member name="P:Ensoftener.Sound.CSWSound.Speed">
+            <summary>Speed of the sound, with changed pitch. 1 is normal. Changing speed reloads all components (including the source file) and should be used sparingly</summary>
+        </member>
+        <member name="T:Ensoftener.Sound.CSWSound.CSWSoundModifier.CSWSoundSampleData">
+            <summary>Contains information about the audio stream.</summary>
+        </member>
+        <member name="F:Ensoftener.Sound.CSWSound.CSWSoundModifier.CSWSoundSampleData.Buffer">
+            <summary>The array of samples to be modified for this frame. Because the modifier is called every latency interval,
+            the array's length is usually the sample rate multiplied by latency (44100 * 0.1s = 4410).</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.Modifier">
+            <summary>Modifies every sound wave that's being played.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.ModifierAdvanced">
+            <summary>Like <b><see cref="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.Modifier"/></b>, modifies sound waves that are being played, except that this also recieves all of the streaming data,
+            including the direct access to the array of samples.</summary>
+            <remarks>To implement a working modifier, create a for loop that starts at the offset and ends at offset + count.
+            That way, you modify every relevant sample that actually plays in the speaker.</remarks>
         </member>
         <member name="T:Ensoftener.SvgImage">
             <summary>A SVG image that can be modified at runtime.</summary>
