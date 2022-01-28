@@ -152,7 +152,8 @@ namespace Ensoftener
                 Usage = Usage.RenderTargetOutput | Usage.ShaderInput | Usage.BackBuffer,
                 SwapEffect = SwapEffect.Sequential, Flags = SwapChainFlags.AllowModeSwitch
             };
-            Form.ResizeEnd += Resize; Input.Input.Initialize(); Sound.SoundGlobal.Initialize();
+            Form.ResizeEnd += Resize; Input.Input.Initialize();
+            try { Sound.SoundGlobal.Initialize(); } catch (System.IO.FileNotFoundException) { }
             Form.FormClosing += (s, e) =>
             {
                 foreach (var setup in Setups) setup.Dispose();
