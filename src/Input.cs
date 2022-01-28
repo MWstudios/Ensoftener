@@ -7,10 +7,18 @@ namespace Ensoftener.Input
     {
         public class MouseButton
         {
-            bool held2; public bool PressedDown { get; private set; } public bool Held { get; private set; } public bool Released { get; private set; }
-            public void Update(Keys button) { Held = IsKeyPressed(button); if (Held) PressedDown = !held2; else Released = held2; held2 = Held; }
+            bool held2, fakeHold, fakeClick; public bool PressedDown { get; private set; } public bool Held { get; private set; } public bool Released { get; private set; }
+            public void Update(Keys button)
+            {
+                Held = IsKeyPressed(button) || (fakeHold && UseFakeInputs);
+                if (fakeClick) { fakeHold = false; fakeClick = false; }
+                if (Held) PressedDown = !held2; else Released = held2; held2 = Held;
+            }
+            public void HoldDown() { if (UseFakeInputs) fakeHold = true; }
+            public void StopHoldingDown() { if (UseFakeInputs) fakeHold = false; }
+            public void Click() { if (UseFakeInputs) { fakeHold = true; fakeClick = true; } }
         }
-        readonly static byte[] keyInputs = new byte[256]; static float mX, mY;
+        readonly static byte[] keyInputs = new byte[256], fakeInputs = new byte[256]; static float mX, mY;
         public static MouseButton LeftButton { get; private set; } = new();
         public static MouseButton RightButton { get; private set; } = new();
         public static MouseButton MiddleButton { get; private set; } = new();
@@ -25,11 +33,16 @@ namespace Ensoftener.Input
         public static float MouseX { get => mX; set => Cursor.Position = new((int)(Cursor.Position.X - mX + value), Cursor.Position.Y); }
         public static float MouseY { get => mY; set => Cursor.Position = new(Cursor.Position.X, (int)(Cursor.Position.Y - mY + value)); }
         public static sbyte Scrolls { get; private set; } = 0;
+        /// <summary>Accept faking keyboard and mouse input with <b><see cref="PressKey(Keys)"/></b>, <b><see cref="UnpressKey(Keys)"/></b>,
+        /// <b><see cref="MouseButton.HoldDown()"/></b>, <b><see cref="MouseButton.StopHoldingDown()"/></b> and <b><see cref="MouseButton.Click()"/></b>.</summary>
+        public static bool UseFakeInputs { get; set; } = false;
         internal static void Initialize() { Global.Form.MouseMove += Form_MouseMove; Global.Form.MouseWheel += Form_MouseWheel; }
         static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e);
         static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e);
-        public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128;
-        public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1;
+        public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128 || (UseFakeInputs && (fakeInputs[(int)key] & 128) == 128);
+        public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1 || (UseFakeInputs && (fakeInputs[(int)key] & 1) == 1);
+        public static void PressKey(Keys key) { fakeInputs[(int)key] |= 1; fakeInputs[(int)key] ^= 128; }
+        public static void UnpressKey(Keys key) { fakeInputs[(int)key] &= 0b11111110; }
         [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern bool GetKeyboardState(byte[] lpKeyState);
         static void SetFlags(MouseEventArgs e) { mX = e.X; mY = e.Y; Scrolls = (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); }
     }
