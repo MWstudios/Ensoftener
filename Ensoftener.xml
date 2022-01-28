@@ -28,7 +28,8 @@
             <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="M:Ensoftener.Global.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})"/></b> on this context
             for the fastest performance. If you were to convert any context from <b><see cref="P:Ensoftener.Global.Setups"/></b> to GDI, it would take much longer, as the other contexts use
             <b><see cref="F:SharpDX.DXGI.Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
-            which takes about half a second. Since the final context's pixel format is <b><see cref="F:SharpDX.DXGI.Format.B8G8R8A8_UNorm"/></b>, it's the easiest and fastest to copy.</remarks>
+            which takes about half a second. Since the final context's pixel format is <b><see cref="F:SharpDX.DXGI.Format.B8G8R8A8_UNorm"/></b>,
+            it's the easiest and fastest to copy.</remarks>
         </member>
         <member name="P:Ensoftener.Global.SwapChainDescription">
             <summary><b><see cref="P:Ensoftener.Global.SwapChain"/></b>'s creation specs (in case you need them).</summary>
@@ -63,14 +64,31 @@
         <member name="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen">
             <summary>Set this context to be resizable with the screen.</summary>
         </member>
-        <member name="M:Ensoftener.Global.DrawingSetup.#ctor(System.Nullable{SharpDX.Size2},System.Boolean,System.Boolean)">
+        <member name="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile">
+            <summary>The context's tile size will be equal to the context's size. The setting will take effect after the window is moved or resized.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.DrawingSetup.ApplySettings(System.Nullable{System.Boolean},System.Nullable{System.Boolean})">
+            <summary>Changes settings of the setup and applies them. Set values to null to leave them as they are.</summary>
+            <param name="resizeWithScreen">The <see cref="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen"/> property.</param>
+            <param name="oneTile">The <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> property.</param>
+        </member>
+        <member name="M:Ensoftener.Global.DrawingSetup.#ctor(System.Nullable{SharpDX.Size2},System.Nullable{SharpDX.Size2},System.Boolean,System.Boolean,System.Boolean)">
             <summary>Adds a new rendering setup.</summary>
-            <param name="size">The default size of the device context about to be created. By default it's the window size.</param>
-            <param name="resizeWithScreen">This setup resizes with the screen.</param>
+            <param name="size">The size of the context's target</param>
+            <param name="tileSize">The <see cref="P:Ensoftener.Global.DrawingSetup.TileSize"/> property. By default it's 64×64 or the window size if <paramref name="oneTile"/> is set to true.</param>
+            <param name="resizeWithScreen">The <see cref="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen"/> property.</param>
+            <param name="oneTile">The <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> property.</param>
             <param name="useFloats">Create the context with 32-bit float color depth (128bpp) instead of 8-bit byte color depth (32bpp).
             <br/><br/>Graphics-wise, floats are more useful, as they allow for colors to be "whiter than white" (or more than 1) and "blacker than black" (negative),
             which is useful for pixel shaders. <br/>Performance-wise, bytes are faster if you're converting to GDI bitmaps often, and require 4 times less memory.
             <br/>You won't need to use bytes unless you need to solve one of these two issues.</param>
+        </member>
+        <member name="P:Ensoftener.Global.DrawingSetup.TileSize">
+            <summary>The maximum allowed size of tiles the shader will be split into.
+            <b>The tiles will not use this exact size, but they will never exceed this size.</b></summary>
+            <remarks>Setting the tile size both to a small amount or a large amount has disadvantages. Since texture coordinates in shaders are determined by tiles,
+            the position in both pixel and compute shaders starts at the top left corner of each tile. Setting <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> 
+            to true solves this issue, but rendering shaders will be slower, as the GPU tries to render the whole image at once.</remarks>
         </member>
         <member name="M:Ensoftener.Global.DrawingSetup.RenderScreenShaders(System.Boolean,SharpDX.Direct2D1.Effect[])">
             <summary>Batch renders an array of effects applied to the entire screen.</summary>
@@ -89,10 +107,11 @@
         <member name="P:Ensoftener.Global.OutputSetup">
             <summary>The setup that will serve as the output and present its contents to the screen.</summary>
         </member>
-        <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Nullable{SharpDX.Size2})">
+        <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Boolean,System.Nullable{SharpDX.Size2})">
             <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
             <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
             All components will be accessible from their lists. Cannot be less than 1.</param>
+            <param name="crashIfLag">Crashes if a shader takes more than 2 seconds to execute. Useful when testing out shaders with loops.</param>
             <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
         </member>
         <member name="M:Ensoftener.Global.Run(System.Action)">
@@ -142,6 +161,21 @@
         </member>
         <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
             <summary>Gets the device context's drawing rectangle.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.SetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32,``0)">
+            <summary>Sets the data of a vertex buffer after the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method has been called.</summary>
+            <param name="originalData">The array received from the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method.</param>
+            <param name="offset">The offset of the value to modify, in bytes.</param>
+            <param name="value">The value to set.</param>
+        </member>
+        <member name="M:Ensoftener.Global.GetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32)">
+            <summary>Gets the data of a vertex buffer after the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method has been called.</summary>
+            <param name="originalData">The array received from the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method.</param>
+            <param name="offset">The offset of the value to modify, in bytes.</param>
+        </member>
+        <member name="P:Ensoftener.Input.Input.UseFakeInputs">
+            <summary>Accept faking keyboard and mouse input with <b><see cref="M:Ensoftener.Input.Input.PressKey(System.Windows.Forms.Keys)"/></b>, <b><see cref="M:Ensoftener.Input.Input.UnpressKey(System.Windows.Forms.Keys)"/></b>,
+            <b><see cref="M:Ensoftener.Input.Input.MouseButton.HoldDown"/></b>, <b><see cref="M:Ensoftener.Input.Input.MouseButton.StopHoldingDown"/></b> and <b><see cref="M:Ensoftener.Input.Input.MouseButton.Click"/></b>.</summary>
         </member>
         <member name="T:Ensoftener.Input.XboxInput">
             <summary>The class that provides everything necessary for working with Xbox controllers.</summary>
@@ -198,16 +232,29 @@
             <param name="usePS">Enable the pixel shader stage in this effect.</param>
             <param name="useVS">Enable the vertex shader stage in this effect.</param>
         </member>
+        <member name="P:Ensoftener.PVShaderBase.VertexCount">
+            <summary>The amount of vertices processed by the vertex shader. The amount must be a multiple of 3, as every 3 vertices form a single face.</summary>
+        </member>
         <member name="P:Ensoftener.PVShaderBase.VsInBuffer">
-            <summary>The stream of values passed to what is <b>VsIn</b> in vertex shaders. Streams can be created off of arrays via
+            <summary>A stream of structs assigned to semantics in vertex shaders. Streams can be created off of arrays via
             <see cref="M:SharpDX.DataStream.Create``1(``0[],System.Boolean,System.Boolean,System.Int32,System.Boolean)"/> (set <b>canRead</b> and <b>canWrite</b> to true!).
-            The extra int indicates the size of each value.</summary>
+            The extra int indicates the size of each struct.</summary>
             <remarks>A vertex buffer in vertex shaders works differently than a constant buffer in pixel shaders (if you're looking for an eqiuvalent, that's <b>b1</b>).
-            Here, the stream will be split into elements using the second int as a "stride". For example, you pass an array of <see cref="T:SharpDX.Vector2"/>
-            and <c>sizeof(Vector2)</c> as the integer. Direct2D will then split the stream using that integer and pass each value to the shader individually.</remarks>
+            Here, each vertex will get one struct in the array and recieve it via semantics in its main method. <see cref="P:Ensoftener.PVShaderBase.InputElements"/> decides what parts
+            of the struct will be assigned to each semantic.<br/><br/>While the struct can be literally anything, certain restrictions apply:
+            <list type="number"><item>The struct must contain only value types (such as <see cref="T:SharpDX.Vector2"/>).</item>
+            <item>All structs must be the same size, because the stream progresses by a fixed integer (second output) and would become offset.</item></list></remarks>
         </member>
         <member name="P:Ensoftener.PVShaderBase.InputElements">
-            <summary>Returns an array of semantics that will then appear in the <b>VsIn</b> struct.</summary>
+            <summary>Returns an array of semantics that will be assigned to a part of each struct from <see cref="P:Ensoftener.PVShaderBase.VsInBuffer"/>. The offset of an element specifies
+            the offset of a struct's s region that's assigned, in bytes. The format specifies what type will be assigned to the semantic.</summary>
+            <remarks>For example, if <see cref="P:Ensoftener.PVShaderBase.VsInBuffer"/> contains structs with 8 floats each and there's an
+            <see cref="T:SharpDX.Direct2D1.InputElement"/> named "ABC" with an offset of 16 and format of <see cref="F:SharpDX.DXGI.Format.R32G32B32_Float"/>,
+            the vertex shader will recieve the struct's 5th, 6th and 7th float as a float3 under the ABC semantic.</remarks>
+        </member>
+        <member name="M:Ensoftener.PVShaderBase.ReloadVertexBuffer(System.Boolean)">
+            <summary>Updates the vertex buffer according to <see cref="P:Ensoftener.PVShaderBase.VsInBuffer"/>.</summary>
+            <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="P:Ensoftener.Global.VertexShaderFile"/>.</param>
         </member>
         <member name="T:Ensoftener.CloneablePixelShader">
             <summary>A shader with no constant buffer, no inside effects and 1 texture input.

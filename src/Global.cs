@@ -25,7 +25,8 @@ namespace Ensoftener
         /// <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="GetScreenCPURead"/></b> on this context
         /// for the fastest performance. If you were to convert any context from <b><see cref="Setups"/></b> to GDI, it would take much longer, as the other contexts use
         /// <b><see cref="Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
-        /// which takes about half a second. Since the final context's pixel format is <b><see cref="Format.B8G8R8A8_UNorm"/></b>, it's the easiest and fastest to copy.</remarks>
+        /// which takes about half a second. Since the final context's pixel format is <b><see cref="Format.B8G8R8A8_UNorm"/></b>,
+        /// it's the easiest and fastest to copy.</remarks>
         public static DeviceContext FinalDC { get; private set; }
         /// <summary><b><see cref="SwapChain"/></b>'s creation specs (in case you need them).</summary>
         public static SwapChainDescription1 SwapChainDescription => dxgiScd;
@@ -46,38 +47,58 @@ namespace Ensoftener
         public static SwapChain1 SwapChain { get; private set; }
         public class DrawingSetup
         {
-            bool resize; Bitmap1 rt;
+            bool resize, useOnlyOneTile; Bitmap1 rt;
             /// <summary>The DeviceContext used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
             public DeviceContext DC { get; private set; }
             /// <summary>The render target of the DeviceContext. Any changes of the target will apply to the device context as well.</summary>
             /// <remarks>Based on DeviceContext.</remarks>
             public Bitmap1 RenderTarget { get => rt; set => DC.Target = rt = value; }
             /// <summary>Set this context to be resizable with the screen.</summary>
-            public bool ResizeWithScreen { get => resize; set { if (value && !resize) Resize(new(Form.ClientSize.Width, Form.ClientSize.Height)); resize = value; } }
+            public bool ResizeWithScreen => resize;
+            /// <summary>The context's tile size will be equal to the context's size. The setting will take effect after the window is moved or resized.</summary>
+            public bool UseOnlyOneTile => useOnlyOneTile;
+            /// <summary>Changes settings of the setup and applies them. Set values to null to leave them as they are.</summary>
+            /// <param name="resizeWithScreen">The <see cref="ResizeWithScreen"/> property.</param>
+            /// <param name="oneTile">The <see cref="UseOnlyOneTile"/> property.</param>
+            public void ApplySettings(bool? resizeWithScreen, bool? oneTile)
+            {
+                useOnlyOneTile = oneTile ?? UseOnlyOneTile; resize = resizeWithScreen ?? resize;
+                Resize(resize ? RenderTarget.PixelSize : new(Form.ClientSize.Width, Form.ClientSize.Height));
+            }
             /// <summary>Adds a new rendering setup.</summary>
-            /// <param name="size">The default size of the device context about to be created. By default it's the window size.</param>
-            /// <param name="resizeWithScreen">This setup resizes with the screen.</param>
+            /// <param name="size">The size of the context's target</param>
+            /// <param name="tileSize">The <see cref="TileSize"/> property. By default it's 64×64 or the window size if <paramref name="oneTile"/> is set to true.</param>
+            /// <param name="resizeWithScreen">The <see cref="ResizeWithScreen"/> property.</param>
+            /// <param name="oneTile">The <see cref="UseOnlyOneTile"/> property.</param>
             /// <param name="useFloats">Create the context with 32-bit float color depth (128bpp) instead of 8-bit byte color depth (32bpp).
             /// <br/><br/>Graphics-wise, floats are more useful, as they allow for colors to be "whiter than white" (or more than 1) and "blacker than black" (negative),
             /// which is useful for pixel shaders. <br/>Performance-wise, bytes are faster if you're converting to GDI bitmaps often, and require 4 times less memory.
             /// <br/>You won't need to use bytes unless you need to solve one of these two issues.</param>
-            public DrawingSetup(Size2? size, bool resizeWithScreen, bool useFloats)
+            public DrawingSetup(Size2? size, Size2? tileSize, bool resizeWithScreen, bool oneTile, bool useFloats)
             {
-                ResizeWithScreen = resizeWithScreen; Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height);
+                Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height);
+                resize = resizeWithScreen; TileSize = tileSize ?? TileSize; useOnlyOneTile = oneTile;
                 DC = new(D2DDevice.QueryInterface<SharpDX.Direct2D1.Device>(), DeviceContextOptions.EnableMultithreadedOptimizations)
                 {
                     RenderingControls = new()
                     {
                         BufferPrecision = useFloats ? BufferPrecision.PerChannel32Float : BufferPrecision.PerChannel8UNorm,
-                        TileSize = ResizeWithScreen ? screen : size ?? screen
+                        TileSize = TileSize
                     },
                     UnitMode = UnitMode.Pixels
                 };
-                RenderTarget = new(DC, DC.RenderingControls.TileSize, BitmapProperties);
+                RenderTarget = new(DC, size ?? screen, BitmapProperties);
             }
+            /// <summary>The maximum allowed size of tiles the shader will be split into.
+            /// <b>The tiles will not use this exact size, but they will never exceed this size.</b></summary>
+            /// <remarks>Setting the tile size both to a small amount or a large amount has disadvantages. Since texture coordinates in shaders are determined by tiles,
+            /// the position in both pixel and compute shaders starts at the top left corner of each tile. Setting <see cref="UseOnlyOneTile"/> 
+            /// to true solves this issue, but rendering shaders will be slower, as the GPU tries to render the whole image at once.</remarks>
+            public Size2 TileSize { get; set; } = new(64, 64);
             public void Resize(Size2 size)
             {
-                DC.RenderingControls = new() { BufferPrecision = DC.RenderingControls.BufferPrecision, TileSize = new(64, 64) };
+                DC.RenderingControls = new() { BufferPrecision = DC.RenderingControls.BufferPrecision,
+                    TileSize = UseOnlyOneTile ? new(Form.ClientSize.Width, Form.ClientSize.Height) : TileSize };
                 RenderTarget.Dispose(); RenderTarget = new(DC, size, BitmapProperties);
             }
             public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); }
@@ -112,15 +133,16 @@ namespace Ensoftener
         public static List<CustomEffectBase> ExistingEffects { get; } = new();
         static DrawingSetup outSetup;
         /// <summary>The setup that will serve as the output and present its contents to the screen.</summary>
-        public static DrawingSetup OutputSetup { get => outSetup; private set { outSetup = value; outSetup.ResizeWithScreen = true; } }
+        public static DrawingSetup OutputSetup { get => outSetup; set { outSetup = value; outSetup.ApplySettings(true, outSetup.UseOnlyOneTile); } }
         /// <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
         /// <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
         /// All components will be accessible from their lists. Cannot be less than 1.</param>
+        /// <param name="crashIfLag">Crashes if a shader takes more than 2 seconds to execute. Useful when testing out shaders with loops.</param>
         /// <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
-        public static void Initialize(int parallelDevices = 1, Size2? sizes = null)
+        public static void Initialize(int parallelDevices = 1, bool crashIfLag = false, Size2? sizes = null)
         {
             if (parallelDevices < 1) parallelDevices = 1;
-            D3DDevice = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport | DeviceCreationFlags.DisableGpuTimeout);
+            D3DDevice = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport | (crashIfLag ? DeviceCreationFlags.None : DeviceCreationFlags.DisableGpuTimeout));
             D2DDevice = new(D3DDevice.QueryInterface<SharpDX.DXGI.Device1>());
             D2DFactory = D2DDevice.Factory.QueryInterface<SharpDX.Direct2D1.Factory1>(); D2DFactory.RegisterEffect<CloneablePixelShader>();
             dxgiScd = new()
@@ -148,7 +170,7 @@ namespace Ensoftener
             FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations)
             { RenderingControls = new() { TileSize = new(Form.ClientSize.Width, Form.ClientSize.Height) } };
             FinalDC.Target = FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), null);
-            for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, false, true));
+            for (int i = 0; i < parallelDevices; ++i) Setups.Add(new(sizes, null, false, false, true));
             OutputSetup = Setups[0];
         }
         /// <summary>Starts displaying the window and runs the rendering loop.</summary>
@@ -234,7 +256,7 @@ namespace Ensoftener
         /// <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
         public static void EndRender()
         {
-            FinalDC.Target = FinalTarget; FinalDC.ChainBeginDraw().ChainClear(new(0, 0, 0, 1)).ChainDrawImage(OutputSetup.RenderTarget).EndDraw();
+            FinalDC.Target = FinalTarget; FinalDC.ChainBeginDraw().ChainDrawImage(OutputSetup.RenderTarget, compositeMode: CompositeMode.SourceCopy).EndDraw();
             SwapChain.Present(1, PresentFlags.None, new()); Input.Input.Update();
         }
         /// <summary>Disposes of a setup and removes it from the lists.</summary>
@@ -248,5 +270,16 @@ namespace Ensoftener
         /// <summary>Gets the device context's drawing rectangle.</summary>
         public static RectangleF ScreenRectangle(this DeviceContext d2dc) => new(0, 0, d2dc.Size.Width, d2dc.Size.Height);
         public static Size2 ToSize2(this Size2F size) => new((int)size.Width, (int)size.Height);
+        /// <summary>Sets the data of a vertex buffer after the <see cref="VertexBuffer.Map(byte[], int)"/> method has been called.</summary>
+        /// <param name="originalData">The array received from the <see cref="VertexBuffer.Map(byte[], int)"/> method.</param>
+        /// <param name="offset">The offset of the value to modify, in bytes.</param>
+        /// <param name="value">The value to set.</param>
+        public static unsafe void SetMappedData<T>(this VertexBuffer vb, byte[] originalData, int offset, T value) where T : unmanaged
+        { fixed (void* pointer = &originalData[0]) *(T*)(*(IntPtr*)pointer + offset) = value; }
+        /// <summary>Gets the data of a vertex buffer after the <see cref="VertexBuffer.Map(byte[], int)"/> method has been called.</summary>
+        /// <param name="originalData">The array received from the <see cref="VertexBuffer.Map(byte[], int)"/> method.</param>
+        /// <param name="offset">The offset of the value to modify, in bytes.</param>
+        public static unsafe T GetMappedData<T>(this VertexBuffer vb, byte[] originalData, int offset) where T : unmanaged
+        { fixed (void* pointer = &originalData[0]) return *(T*)(*(IntPtr*)pointer + offset); }
     }
 }
