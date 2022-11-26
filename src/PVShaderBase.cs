@@ -55,10 +55,10 @@ namespace Ensoftener
             //Unfortunately this is too early because the code below within this method is used to populate stateful data needed by the SetDrawInformation call. 
             //transformGraph.SetSingleTransformNode(this);
             effectContext = eC;
-            if (pixelShader) { PixelShaderFilePath = Global.ShaderFile; effectContext.LoadPixelShader(psGUID, psFile); }
+            if (pixelShader) { PixelShaderFilePath = GDX.ShaderFile; effectContext.LoadPixelShader(psGUID, psFile); }
             if (vertexShader)
             {
-                VertexShaderFilePath = Global.VertexShaderFile; effectContext.LoadVertexShader(vsGUID, vsFile);
+                VertexShaderFilePath = GDX.VertexShaderFile; effectContext.LoadVertexShader(vsGUID, vsFile);
                 vertexBuffer = effectContext.FindVertexBuffer(vbGUID);
                 if (vertexBuffer == null) ReloadVertexBuffer(true);
             }
@@ -100,10 +100,10 @@ namespace Ensoftener
             if (vertexShader) dInfo.SetVertexProcessing(vertexBuffer, VertexOptions.UseDepthBuffer, null, new VertexRange(0, VertexCount), vsGUID);
         }
         /// <summary>Updates the vertex buffer according to <see cref="VsInBuffer"/>.</summary>
-        /// <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="Global.VertexShaderFile"/>.</param>
+        /// <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="GDX.VertexShaderFile"/>.</param>
         public void ReloadVertexBuffer(bool sameShader = true)
         {
-            if (!sameShader) VertexShaderFilePath = Global.VertexShaderFile;
+            if (!sameShader) VertexShaderFilePath = GDX.VertexShaderFile;
             vertexBuffer?.Dispose(); //vbGUID = Guid.NewGuid();
             vertexBuffer = GetVertexBuffer(VertexUsage.Static);
         }

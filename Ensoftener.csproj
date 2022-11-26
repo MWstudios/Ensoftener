@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <RootNamespace>Ensoftener</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
 	<UseWPF>true</UseWPF>
@@ -13,48 +13,23 @@
     <Product />
     <Platforms>AnyCPU;x64;x86</Platforms>
     <Version>4.1</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <AllowedReferenceRelatedFileExtensions>.allowedextension</AllowedReferenceRelatedFileExtensions>
     <DocumentationFile>Ensoftener.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
+	  <SelfContained>true</SelfContained>
+	  <PublishSingleFile>true</PublishSingleFile>
+	  <PublishReadyToRun>true</PublishReadyToRun>
+	  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+	  <NoWarn>1701;1702;1591;1573</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <AllowedReferenceRelatedFileExtensions>.allowedextension</AllowedReferenceRelatedFileExtensions>
-    <DocumentationFile>Ensoftener.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <AllowedReferenceRelatedFileExtensions>.allowedextension</AllowedReferenceRelatedFileExtensions>
-    <DocumentationFile>Ensoftener.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>Ensoftener.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>Ensoftener.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Platform)'=='Debug'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>Ensoftener.xml</DocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
@@ -96,10 +71,27 @@
 
   <ItemGroup>
     <PackageReference Include="CSCore" Version="1.2.1.2" />
-    <PackageReference Include="SharpDX.Desktop" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="SharpDX">
+      <HintPath>include\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Desktop">
+      <HintPath>include\SharpDX.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct2D1">
+      <HintPath>include\SharpDX.Direct2D1.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D11">
+      <HintPath>include\SharpDX.Direct3D11.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.DXGI">
+      <HintPath>include\SharpDX.DXGI.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Mathematics">
+      <HintPath>include\SharpDX.Mathematics.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -54,6 +54,18 @@
         <member name="P:Ensoftener.Global.SwapChain">
             <remarks>Based on D3DDevice and a DXGIFactory.</remarks>
         </member>
+        <member name="P:Ensoftener.Global.DWriteFactory">
+            <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
+        </member>
+        <member name="P:Ensoftener.Global.WICFactory">
+            <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
+        </member>
+        <member name="P:Ensoftener.Global.ExistingEffects">
+            <summary>A list of all effects that were created.</summary> 
+        </member>
+        <member name="P:Ensoftener.Global.OutputSetup">
+            <summary>The setup that will serve as the output and present its contents to the screen.</summary>
+        </member>
         <member name="P:Ensoftener.Global.DrawingSetup.DC">
             <summary>The DeviceContext used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
@@ -95,18 +107,6 @@
             <param name="tileCorrection"></param>
             <param name="effects">The array of effects to render.</param>
         </member>
-        <member name="P:Ensoftener.Global.DWriteFactory">
-            <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
-        </member>
-        <member name="P:Ensoftener.Global.WICFactory">
-            <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
-        </member>
-        <member name="P:Ensoftener.Global.ExistingEffects">
-            <summary>A list of all effects that were created.</summary> 
-        </member>
-        <member name="P:Ensoftener.Global.OutputSetup">
-            <summary>The setup that will serve as the output and present its contents to the screen.</summary>
-        </member>
         <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Boolean,System.Nullable{SharpDX.Size2})">
             <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
             <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
@@ -114,16 +114,32 @@
             <param name="crashIfLag">Crashes if a shader takes more than 2 seconds to execute. Useful when testing out shaders with loops.</param>
             <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
         </member>
-        <member name="M:Ensoftener.Global.Run(System.Action)">
+        <member name="M:Ensoftener.Global.Run(System.Action,System.Boolean)">
             <summary>Starts displaying the window and runs the rendering loop.</summary>
             <param name="RenderMethod">The method that will be called on each monitor refresh.</param>
             <remarks><b>Do not use this for updating game logic!</b> The <b><paramref name="RenderMethod"/></b> is dependent on your monitor refresh rate
             (60x or 144x per second). Instead, create a second thread that's called every 1/60th of a second.</remarks>
+            <param name="updateInput">Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+            is running can have consequences if the other thread relies on this input.</param>
+        </member>
+        <member name="M:Ensoftener.Global.RunSideThread(System.Action,System.Int64,System.Boolean)">
+            <summary>Starts another updating loop after the window shows up, independent from your monitor's refresh rate.
+            The thread will be then attached to the main one and will accept inputs as well.</summary>
+            <param name="UpdateMethod">The method to call each update.</param>
+            <param name="tickRefreshRate">The amount of ticks to wait until next call. A tick is 100 nanoseconds long, so 166666 ticks is about 1/60th of a second.</param>
+            <param name="updateInput">Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+            is running can have consequences if the other thread relies on this input.</param>
         </member>
         <member name="M:Ensoftener.Global.Quit">
             <summary>Schedules a shutdown of the window. After the current rendering method ends, all sounds are stopped and components deleted.</summary>
             <remarks>Windows doesn't allow for different threads to close a single window, which means the closure needs to be scheduled for later
             and then executed by the window thread.</remarks>
+        </member>
+        <member name="M:Ensoftener.Global.EndRender">
+            <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.RemoveSetup(System.Int32)">
+            <summary>Disposes of a setup and removes it from the lists.</summary>
         </member>
         <member name="M:Ensoftener.Global.LoadBitmapFromFile(SharpDX.Direct2D1.DeviceContext,System.String)">
             <summary>Creates a SharpDX Bitmap off of an image file.</summary>
@@ -143,12 +159,6 @@
         <member name="M:Ensoftener.Global.GetScreenGPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
             <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
             <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
-        </member>
-        <member name="M:Ensoftener.Global.EndRender">
-            <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
-        </member>
-        <member name="M:Ensoftener.Global.RemoveSetup(System.Int32)">
-            <summary>Disposes of a setup and removes it from the lists.</summary>
         </member>
         <member name="M:Ensoftener.Global.AddIfMissing``1(System.Collections.Generic.List{``0},``0)">
             <summary>Adds an object to the end of the <seealso cref="T:System.Collections.Generic.List`1"/> only if the object isn't already present.</summary>
@@ -172,6 +182,9 @@
             <summary>Gets the data of a vertex buffer after the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method has been called.</summary>
             <param name="originalData">The array received from the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method.</param>
             <param name="offset">The offset of the value to modify, in bytes.</param>
+        </member>
+        <member name="P:Ensoftener.Input.Input.KeyboardChars">
+            <summary>The character inputs of the keyboard. Null if there are none.</summary>
         </member>
         <member name="P:Ensoftener.Input.Input.UseFakeInputs">
             <summary>Accept faking keyboard and mouse input with <b><see cref="M:Ensoftener.Input.Input.PressKey(System.Windows.Forms.Keys)"/></b>, <b><see cref="M:Ensoftener.Input.Input.UnpressKey(System.Windows.Forms.Keys)"/></b>,

@@ -89,9 +89,9 @@ namespace Ensoftener
         public void Rebuild(string XML)
         {
             using MemoryStream readStream = new(Encoding.Default.GetBytes(XML));
-            using SharpDX.WIC.WICStream wicStream = new(Global.WICFactory, readStream);
+            using SharpDX.WIC.WICStream wicStream = new(GDX.WICFactory, readStream);
             Document?.Dispose();
-            Document = DeviceContext.CreateSvgDocument(wicStream, new(Global.Form.Size.Width, Global.Form.Size.Height));
+            Document = DeviceContext.CreateSvgDocument(wicStream, new(GDX.Form.Size.Width, GDX.Form.Size.Height));
             DocumentAsXml = new(); DocumentAsXml.LoadXml(XML);
             Root?.Dispose(); Root = new(this, null, Document.Root, DocumentAsXml["svg"]); Outdated = false;
         }

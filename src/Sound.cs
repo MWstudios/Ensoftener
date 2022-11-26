@@ -20,7 +20,7 @@ namespace Ensoftener.Sound
             using MMDeviceEnumerator mmde = new();
             AudioIn = mmde.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Multimedia);
             AudioOut = mmde.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            Global.Form.FormClosed += (s, e) =>
+            GDX.Form.FormClosed += (s, e) =>
             {
                 while (CSWSounds.Count != 0) { CSWSounds[0].Stop(); CSWSounds[0].Dispose(); }
                 AudioOut?.Dispose(); AudioIn?.Dispose();
@@ -157,7 +157,7 @@ namespace Ensoftener.Sound
         public double Length => soundIn.GetLength().TotalSeconds;
         public CSWSound(string file, bool useDirectSound = false, int latency = 100)
         { SoundGlobal.CSWSounds.Add(this); useDS = useDirectSound; Latency = latency; FilePath = file; }
-        void Initialize(bool changePath)
+        void Initialize(bool changePath) //soundIn (W) -> stretcher (W) -> (W>S) -> Modifier (S) -> (S>W) -> backStretcher (W) -> Sound (W)
         {
             if (Modifier != null) { Modifier.hardStop = true;// while (!Modifier.hardStopResponse) ;
             }
@@ -212,7 +212,7 @@ namespace Ensoftener.Sound
                 for (int i = offset; i < offset + count; i += 2)
                 {
                     vL = buffer[i] * vLtoL + buffer[i + 1] * vRtoL; vR = buffer[i] * vLtoR + buffer[i + 1] * vRtoR;
-                    buffer[i] = Modifier?.Invoke(vL) ?? vL; buffer[i + 1] = Modifier?.Invoke(vR) ?? vR; 
+                    if (Modifier != null) { buffer[i] = Modifier.Invoke(vL); buffer[i + 1] = Modifier.Invoke(vR); }
                 }
                 previousBuffer = buffer;
                 if (loop && this.GetPosition() > this.GetLength() - TimeSpan.FromSeconds(previousBuffer.Length / (double)Source.WaveFormat.SampleRate)) Source.Position = 0;
