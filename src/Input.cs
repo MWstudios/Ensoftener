@@ -24,9 +24,11 @@ namespace Ensoftener.Input
         public static MouseButton MiddleButton { get; private set; } = new();
         public static MouseButton SideButton1 { get; private set; } = new();
         public static MouseButton SideButton2 { get; private set; } = new();
-        internal static void Update()
+        /// <summary>The character inputs of the keyboard. Null if there are none.</summary>
+        public static string KeyboardChars { get; private set; }
+        public static void Update()
         {
-            XboxInput.Update(); GetKeyboardState(keyInputs);
+            XboxInput.Update(); GetKeyboardState(keyInputs); KeyboardChars = null; Scrolls = 0;
             LeftButton.Update(Keys.LButton); RightButton.Update(Keys.RButton);
             MiddleButton.Update(Keys.MButton); SideButton1.Update(Keys.XButton1); SideButton2.Update(Keys.XButton2);
         }
@@ -36,15 +38,16 @@ namespace Ensoftener.Input
         /// <summary>Accept faking keyboard and mouse input with <b><see cref="PressKey(Keys)"/></b>, <b><see cref="UnpressKey(Keys)"/></b>,
         /// <b><see cref="MouseButton.HoldDown()"/></b>, <b><see cref="MouseButton.StopHoldingDown()"/></b> and <b><see cref="MouseButton.Click()"/></b>.</summary>
         public static bool UseFakeInputs { get; set; } = false;
-        internal static void Initialize() { Global.Form.MouseMove += Form_MouseMove; Global.Form.MouseWheel += Form_MouseWheel; }
-        static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e);
-        static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e);
+        internal static void Initialize() { GDX.Form.MouseMove += Form_MouseMove; GDX.Form.MouseWheel += Form_MouseWheel; GDX.Form.KeyPress += Form_KeyPress; }
+        private static void Form_KeyPress(object sender, KeyPressEventArgs e) => KeyboardChars = (KeyboardChars ?? string.Empty) + e.KeyChar.ToString();
+        static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e, false);
+        static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e, true);
         public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128 || (UseFakeInputs && (fakeInputs[(int)key] & 128) == 128);
         public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1 || (UseFakeInputs && (fakeInputs[(int)key] & 1) == 1);
         public static void PressKey(Keys key) { fakeInputs[(int)key] |= 1; fakeInputs[(int)key] ^= 128; }
         public static void UnpressKey(Keys key) { fakeInputs[(int)key] &= 0b11111110; }
         [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern bool GetKeyboardState(byte[] lpKeyState);
-        static void SetFlags(MouseEventArgs e) { mX = e.X; mY = e.Y; Scrolls = (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); }
+        static void SetFlags(MouseEventArgs e, bool scroll) { if (scroll) Scrolls = (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); mX = e.X; mY = e.Y; }
     }
     /// <summary>The class that provides everything necessary for working with Xbox controllers.</summary>
     public static class XboxInput
