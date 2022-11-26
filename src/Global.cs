@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing.Imaging;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using SharpDX;
 using SharpDX.DXGI;
 using SharpDX.Direct2D1;
@@ -14,12 +15,13 @@ using DeviceCreationFlags = SharpDX.Direct3D11.DeviceCreationFlags;
 namespace Ensoftener
 {
     /// <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
-    public static class Global
+    public static class GDX
     {
-        static SwapChainDescription1 dxgiScd;
-        static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget; static bool quit;
+        static SwapChainDescription1 dxgiScd; static uint renderThreadId = 0; static DrawingSetup outSetup;
+        static readonly SharpDX.DXGI.Factory2 FinalFactory = new(); static Bitmap1 FinalTarget; static bool quit, UpdateInput;
         /// <summary>The bitmap properties used for rendering. If you're creating a new bitmap, use these as a parameter.</summary>
         public static readonly BitmapProperties1 BitmapProperties = new(new(Format.R32G32B32A32_Float, AlphaMode.Premultiplied)) { BitmapOptions = BitmapOptions.Target };
+        #region properties
         /// <summary>The final device context that renders on screen, and the only one that uses byte color depth.
         /// Updates after <b><see cref="EndRender"/></b> is called.</summary>
         /// <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="GetScreenCPURead"/></b> on this context
@@ -45,6 +47,17 @@ namespace Ensoftener
         public static SharpDX.Direct3D11.Device D3DDevice { get; private set; }
         /// <remarks>Based on D3DDevice and a DXGIFactory.</remarks>
         public static SwapChain1 SwapChain { get; private set; }
+        public static List<DrawingSetup> Setups { get; } = new();
+        /// <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
+        public static DWFactory DWriteFactory { get; private set; }
+        /// <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
+        public static WICFactory WICFactory { get; } = new();
+        /// <summary>A list of all effects that were created.</summary> 
+        public static List<CustomEffectBase> ExistingEffects { get; } = new();
+        /// <summary>The setup that will serve as the output and present its contents to the screen.</summary>
+        public static DrawingSetup OutputSetup { get => outSetup; set { outSetup = value; outSetup.ApplySettings(true, outSetup.UseOnlyOneTile); } }
+        public static List<SideLoop> SideLoops { get; } = new();
+        #endregion
         public class DrawingSetup
         {
             bool resize, useOnlyOneTile; Bitmap1 rt;
@@ -57,6 +70,7 @@ namespace Ensoftener
             public bool ResizeWithScreen => resize;
             /// <summary>The context's tile size will be equal to the context's size. The setting will take effect after the window is moved or resized.</summary>
             public bool UseOnlyOneTile => useOnlyOneTile;
+            public bool IsDisposed { get; private set; }
             /// <summary>Changes settings of the setup and applies them. Set values to null to leave them as they are.</summary>
             /// <param name="resizeWithScreen">The <see cref="ResizeWithScreen"/> property.</param>
             /// <param name="oneTile">The <see cref="UseOnlyOneTile"/> property.</param>
@@ -101,7 +115,7 @@ namespace Ensoftener
                     TileSize = UseOnlyOneTile ? new(Form.ClientSize.Width, Form.ClientSize.Height) : TileSize };
                 RenderTarget.Dispose(); RenderTarget = new(DC, size, BitmapProperties);
             }
-            public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); }
+            public void Dispose() { RenderTarget.Dispose(); DC.Dispose(); IsDisposed = true; }
             /// <summary>Batch renders an array of effects applied to the entire screen.</summary>
             /// <param name="tileCorrection"></param>
             /// <param name="effects">The array of effects to render.</param>
@@ -124,16 +138,31 @@ namespace Ensoftener
                 return DC;
             }
         }
-        public static List<DrawingSetup> Setups { get; } = new();
-        /// <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
-        public static DWFactory DWriteFactory { get; private set; }
-        /// <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
-        public static WICFactory WICFactory { get; } = new();
-        /// <summary>A list of all effects that were created.</summary> 
-        public static List<CustomEffectBase> ExistingEffects { get; } = new();
-        static DrawingSetup outSetup;
-        /// <summary>The setup that will serve as the output and present its contents to the screen.</summary>
-        public static DrawingSetup OutputSetup { get => outSetup; set { outSetup = value; outSetup.ApplySettings(true, outSetup.UseOnlyOneTile); } }
+        /// <summary>A loop separated from the main rendering method. The loop will run ONLY after <b><see cref="GDX.Run(Action, bool)"/></b> has started.</summary>
+        public class SideLoop
+        {
+            public System.Threading.Tasks.Task Task { get; }
+            /// <summary>The loop's refresh rate, in miliseconds. Accepts up to 4 decimal numbers. Default is 16.6667 ms.</summary>
+            public double RefreshRate { get; set; } = 16.6667;
+            /// <summary>Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+            /// is running can have consequences if the other thread relies on this input.</summary>
+            public bool UpdateInput { get; set; } = true;
+            /// <summary>The method to call each update.</summary>
+            public Action UpdateMethod { get; set; }
+            public SideLoop(Action updateMethod)
+            {
+                UpdateMethod = updateMethod;
+                Task = System.Threading.Tasks.Task.Run(() =>
+                {
+                    System.Diagnostics.Stopwatch t = new(); t.Start();
+                    while (renderThreadId == 0) ; AttachThreadInput(GetCurrentThreadId(), renderThreadId, true);
+                    while (Form.Visible) { while (t.ElapsedTicks < RefreshRate) ; UpdateMethod(); if (UpdateInput) Input.Input.Update(); t.Restart(); }
+                });
+            }
+        }
+        #region methods
+        [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern bool AttachThreadInput(uint source, uint dest, bool attach);
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern uint GetCurrentThreadId();
         /// <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
         /// <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
         /// All components will be accessible from their lists. Cannot be less than 1.</param>
@@ -177,17 +206,44 @@ namespace Ensoftener
         /// <summary>Starts displaying the window and runs the rendering loop.</summary>
         /// <param name="RenderMethod">The method that will be called on each monitor refresh.</param>
         /// <remarks><b>Do not use this for updating game logic!</b> The <b><paramref name="RenderMethod"/></b> is dependent on your monitor refresh rate
-        /// (60x or 144x per second). Instead, create a second thread that's called every 1/60th of a second.</remarks>
-        public static void Run(Action RenderMethod)
+        /// (60x or 144x per second). Instead, add a loop to <b><see cref="SideLoops"/></b> that runs at a fixed refresh rate.</remarks>
+        /// <param name="updateInput">Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+        /// is running can have consequences if the other thread relies on this input.</param>
+        public static void Run(Action RenderMethod, bool updateInput = true)
         {
-            if (RenderMethod == null) return; Form.Show();
+            if (RenderMethod == null) return; UpdateInput = updateInput; Form.Show();
             using SharpDX.Windows.RenderLoop renderLoop = new(Form);
+            renderThreadId = GetCurrentThreadId();
             while (renderLoop.NextFrame() && !quit) RenderMethod(); Form.Close();
         }
         /// <summary>Schedules a shutdown of the window. After the current rendering method ends, all sounds are stopped and components deleted.</summary>
         /// <remarks>Windows doesn't allow for different threads to close a single window, which means the closure needs to be scheduled for later
         /// and then executed by the window thread.</remarks>
         public static void Quit() => quit = true;
+        public static void Resize(object sender = null, EventArgs e = null)
+        {
+            Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height); dxgiScd.Width = screen.Width; dxgiScd.Height = screen.Height;
+            for (int i = 0; i < Setups.Count; ++i) if (Setups[i].ResizeWithScreen) Setups[i].Resize(screen);
+            SwapChain.ContainingOutput.Dispose(); SwapChain.GetBackBuffer<Surface>(0).Dispose();
+            SwapChain.Dispose(); SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
+            FinalTarget.Dispose(); FinalDC.Dispose();
+            //SwapChain.ResizeBuffers(dxgiScd.BufferCount, screen.Width, screen.Height, dxgiScd.Format, dxgiScd.Flags);
+            FinalDC = new(D2DDevice.QueryInterface<Device5>(), DeviceContextOptions.EnableMultithreadedOptimizations) { RenderingControls = new() { TileSize = screen } };
+            //FinalDC.RenderingControls = new() { TileSize = screen };
+            FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), null); FinalDC.Target = FinalTarget;
+        }
+        /// <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
+        public static void EndRender()
+        {
+            if (FinalTarget == null) return;
+            FinalDC.Target = FinalTarget; FinalDC.ChainBeginDraw().ChainDrawImage(OutputSetup.RenderTarget, compositeMode: CompositeMode.SourceCopy).EndDraw();
+            SwapChain.Present(1, PresentFlags.None, new());
+            if (UpdateInput) Input.Input.Update();
+        }
+        /// <summary>Disposes of a setup and removes it from the lists.</summary>
+        public static void RemoveSetup(int index) { if (Setups[index] == OutputSetup) OutputSetup = Setups[^1]; Setups[index].Dispose(); Setups.RemoveAt(index); }
+        #endregion
+        #region extensions
         /// <summary>Creates a SharpDX Bitmap off of an image file.</summary>
         public static Bitmap LoadBitmapFromFile(this DeviceContext deviceContext, string filename)
         {
@@ -244,24 +300,6 @@ namespace Ensoftener
             result.CopyFromRenderTarget(d2dc, destination ?? new(0, 0), sourceRect); return result;
         }
         public static DeviceContext5 DrawSvgDocument(this DeviceContext5 d2dc, SvgImage svg) { d2dc.DrawSvgDocument(svg.Document); return d2dc; }
-        public static void Resize(object sender = null, EventArgs e = null)
-        {
-            Size2 screen = new(Form.ClientSize.Width, Form.ClientSize.Height); dxgiScd.Width = screen.Width; dxgiScd.Height = screen.Height;
-            for (int i = 0; i < Setups.Count; ++i) if (Setups[i].ResizeWithScreen) Setups[i].Resize(screen);
-            SwapChain.ContainingOutput.Dispose(); SwapChain.GetBackBuffer<Surface>(0).Dispose();
-            SwapChain.Dispose(); SwapChain = new(FinalFactory, D3DDevice, Form.Handle, ref dxgiScd);
-            //SwapChain.ResizeBuffers(dxgiScd.BufferCount, Form.ClientSize.Width, Form.ClientSize.Height, dxgiScd.PixelFormat, dxgiScd.Flags);
-            FinalDC.RenderingControls = new() { TileSize = screen };
-            FinalTarget.Dispose(); FinalTarget = new(FinalDC, SwapChain.GetBackBuffer<Surface>(0), null);
-        }
-        /// <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
-        public static void EndRender()
-        {
-            FinalDC.Target = FinalTarget; FinalDC.ChainBeginDraw().ChainDrawImage(OutputSetup.RenderTarget, compositeMode: CompositeMode.SourceCopy).EndDraw();
-            SwapChain.Present(1, PresentFlags.None, new()); Input.Input.Update();
-        }
-        /// <summary>Disposes of a setup and removes it from the lists.</summary>
-        public static void RemoveSetup(int index) { if (Setups[index] == OutputSetup) OutputSetup = Setups[^1]; Setups[index].Dispose(); Setups.RemoveAt(index); }
         /// <summary>Adds an object to the end of the <seealso cref="List{T}"/> only if the object isn't already present.</summary>
         public static void AddIfMissing<T>(this List<T> list, T item) { if (!list.Contains(item)) list.Add(item); }
         /// <summary>Copies all contents of a <seealso cref="List{T}"/> into a new <seealso cref="List{T}"/>.</summary>
@@ -282,5 +320,6 @@ namespace Ensoftener
         /// <param name="offset">The offset of the value to modify, in bytes.</param>
         public static unsafe T GetMappedData<T>(this VertexBuffer vb, byte[] originalData, int offset) where T : unmanaged
         { fixed (void* pointer = &originalData[0]) return *(T*)(*(IntPtr*)pointer + offset); }
+        #endregion
     }
 }
