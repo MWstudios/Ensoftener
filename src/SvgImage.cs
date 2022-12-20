@@ -39,7 +39,6 @@ using System.Collections.Generic;
 
 using SharpDX;
 using SharpDX.Direct2D1;
-using Ensoftener.Direct2D;
 
 namespace Ensoftener
 {

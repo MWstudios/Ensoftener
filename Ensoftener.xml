@@ -16,195 +16,169 @@
             <summary>The amount of tiles of the image to render. The tile size is specified by the [numthreads] attribute in the compute shader, in pixels.</summary>
             <remarks>If your tiles don't cover the whole image, only a portion of the image will render.</remarks>
         </member>
-        <member name="T:Ensoftener.GDX">
+        <member name="T:Ensoftener.Global">
             <summary>The class containing everything necessary, from Direct2D components to new and useful DeviceContext methods.</summary>
         </member>
-        <member name="F:Ensoftener.GDX.BitmapProperties">
+        <member name="F:Ensoftener.Global.BitmapProperties">
             <summary>The bitmap properties used for rendering. If you're creating a new bitmap, use these as a parameter.</summary>
         </member>
-        <member name="P:Ensoftener.GDX.FinalDC">
+        <member name="P:Ensoftener.Global.FinalDC">
             <summary>The final device context that renders on screen, and the only one that uses byte color depth.
-            Updates after <b><see cref="M:Ensoftener.GDX.EndRender"/></b> is called.</summary>
-            <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="M:Ensoftener.GDX.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})"/></b> on this context
-            for the fastest performance. If you were to convert any context from <b><see cref="P:Ensoftener.GDX.Setups"/></b> to GDI, it would take much longer, as the other contexts use
+            Updates after <b><see cref="M:Ensoftener.Global.EndRender"/></b> is called.</summary>
+            <remarks>If you want to take a screenshot of the screen and convert it into a GDI bitmap, use <b><see cref="M:Ensoftener.Global.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})"/></b> on this context
+            for the fastest performance. If you were to convert any context from <b><see cref="P:Ensoftener.Global.Setups"/></b> to GDI, it would take much longer, as the other contexts use
             <b><see cref="F:SharpDX.DXGI.Format.R32G32B32A32_Float"/></b>. In that case, the library would cast every individual float from the screen to a byte,
             which takes about half a second. Since the final context's pixel format is <b><see cref="F:SharpDX.DXGI.Format.B8G8R8A8_UNorm"/></b>,
             it's the easiest and fastest to copy.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.SwapChainDescription">
-            <summary><b><see cref="P:Ensoftener.GDX.SwapChain"/></b>'s creation specs (in case you need them).</summary>
+        <member name="P:Ensoftener.Global.SwapChainDescription">
+            <summary><b><see cref="P:Ensoftener.Global.SwapChain"/></b>'s creation specs (in case you need them).</summary>
         </member>
-        <member name="P:Ensoftener.GDX.ShaderFile">
+        <member name="P:Ensoftener.Global.ShaderFile">
             <summary>A .cso file that will be loaded by every <b>pixel or compute shader</b> created from now on.
             One shader class can have different pixel shaders for every instance.</summary>
         </member>
-        <member name="P:Ensoftener.GDX.VertexShaderFile">
+        <member name="P:Ensoftener.Global.VertexShaderFile">
             <summary>A .cso file that will be loaded by every <b>vertex shader</b> created from now on.
             One shader class can have different vertex shaders for every instance.</summary>
         </member>
-        <member name="P:Ensoftener.GDX.D2DFactory">
+        <member name="P:Ensoftener.Global.D2DFactory">
             <summary>The class used for registering your custom effects.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.D2DDevice">
+        <member name="P:Ensoftener.Global.D2DDevice">
             <remarks>Based on D3DDevice.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.D3DDevice">
+        <member name="P:Ensoftener.Global.D3DDevice">
             <remarks>Based either on a DXGIFactory or can be freely created.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.SwapChain">
+        <member name="P:Ensoftener.Global.SwapChain">
             <remarks>Based on D3DDevice and a DXGIFactory.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.DWriteFactory">
+        <member name="P:Ensoftener.Global.DWriteFactory">
             <summary>The class passed as a parameter when rendering text.</summary><remarks>Can be freely created.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.WICFactory">
+        <member name="P:Ensoftener.Global.WICFactory">
             <summary>The class used for creating SVG's.</summary><remarks>Can be freely created.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.ExistingEffects">
+        <member name="P:Ensoftener.Global.ExistingEffects">
             <summary>A list of all effects that were created.</summary> 
         </member>
-        <member name="P:Ensoftener.GDX.OutputSetup">
+        <member name="P:Ensoftener.Global.OutputSetup">
             <summary>The setup that will serve as the output and present its contents to the screen.</summary>
         </member>
-        <member name="P:Ensoftener.GDX.UpdateInputOnRender">
-            <summary>Updates mouse+keyboard input in the main render thread. This is very important to look after, as updating input while another thread
-            is running can have consequences if the other thread relies on this input.</summary>
-        </member>
-        <member name="P:Ensoftener.GDX.DrawingSetup.DC">
+        <member name="P:Ensoftener.Global.DrawingSetup.DC">
             <summary>The DeviceContext used for rendering everything, probably the most used class of them all.</summary><remarks>Based on D2DDevice.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.DrawingSetup.RenderTarget">
+        <member name="P:Ensoftener.Global.DrawingSetup.RenderTarget">
             <summary>The render target of the DeviceContext. Any changes of the target will apply to the device context as well.</summary>
             <remarks>Based on DeviceContext.</remarks>
         </member>
-        <member name="P:Ensoftener.GDX.DrawingSetup.ResizeWithScreen">
+        <member name="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen">
             <summary>Set this context to be resizable with the screen.</summary>
         </member>
-        <member name="P:Ensoftener.GDX.DrawingSetup.UseOnlyOneTile">
+        <member name="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile">
             <summary>The context's tile size will be equal to the context's size. The setting will take effect after the window is moved or resized.</summary>
         </member>
-        <member name="M:Ensoftener.GDX.DrawingSetup.ApplySettings(System.Nullable{System.Boolean},System.Nullable{System.Boolean})">
+        <member name="M:Ensoftener.Global.DrawingSetup.ApplySettings(System.Nullable{System.Boolean},System.Nullable{System.Boolean})">
             <summary>Changes settings of the setup and applies them. Set values to null to leave them as they are.</summary>
-            <param name="resizeWithScreen">The <see cref="P:Ensoftener.GDX.DrawingSetup.ResizeWithScreen"/> property.</param>
-            <param name="oneTile">The <see cref="P:Ensoftener.GDX.DrawingSetup.UseOnlyOneTile"/> property.</param>
+            <param name="resizeWithScreen">The <see cref="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen"/> property.</param>
+            <param name="oneTile">The <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> property.</param>
         </member>
-        <member name="M:Ensoftener.GDX.DrawingSetup.#ctor(System.Nullable{SharpDX.Size2},System.Nullable{SharpDX.Size2},System.Boolean,System.Boolean,System.Boolean)">
+        <member name="M:Ensoftener.Global.DrawingSetup.#ctor(System.Nullable{SharpDX.Size2},System.Nullable{SharpDX.Size2},System.Boolean,System.Boolean,System.Boolean)">
             <summary>Adds a new rendering setup.</summary>
             <param name="size">The size of the context's target</param>
-            <param name="tileSize">The <see cref="P:Ensoftener.GDX.DrawingSetup.TileSize"/> property. By default it's 64×64 or the window size if <paramref name="oneTile"/> is set to true.</param>
-            <param name="resizeWithScreen">The <see cref="P:Ensoftener.GDX.DrawingSetup.ResizeWithScreen"/> property.</param>
-            <param name="oneTile">The <see cref="P:Ensoftener.GDX.DrawingSetup.UseOnlyOneTile"/> property.</param>
+            <param name="tileSize">The <see cref="P:Ensoftener.Global.DrawingSetup.TileSize"/> property. By default it's 64×64 or the window size if <paramref name="oneTile"/> is set to true.</param>
+            <param name="resizeWithScreen">The <see cref="P:Ensoftener.Global.DrawingSetup.ResizeWithScreen"/> property.</param>
+            <param name="oneTile">The <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> property.</param>
             <param name="useFloats">Create the context with 32-bit float color depth (128bpp) instead of 8-bit byte color depth (32bpp).
             <br/><br/>Graphics-wise, floats are more useful, as they allow for colors to be "whiter than white" (or more than 1) and "blacker than black" (negative),
             which is useful for pixel shaders. <br/>Performance-wise, bytes are faster if you're converting to GDI bitmaps often, and require 4 times less memory.
             <br/>You won't need to use bytes unless you need to solve one of these two issues.</param>
         </member>
-        <member name="P:Ensoftener.GDX.DrawingSetup.TileSize">
+        <member name="P:Ensoftener.Global.DrawingSetup.TileSize">
             <summary>The maximum allowed size of tiles the shader will be split into.
             <b>The tiles will not use this exact size, but they will never exceed this size.</b></summary>
             <remarks>Setting the tile size both to a small amount or a large amount has disadvantages. Since texture coordinates in shaders are determined by tiles,
-            the position in both pixel and compute shaders starts at the top left corner of each tile. Setting <see cref="P:Ensoftener.GDX.DrawingSetup.UseOnlyOneTile"/> 
+            the position in both pixel and compute shaders starts at the top left corner of each tile. Setting <see cref="P:Ensoftener.Global.DrawingSetup.UseOnlyOneTile"/> 
             to true solves this issue, but rendering shaders will be slower, as the GPU tries to render the whole image at once.</remarks>
         </member>
-        <member name="M:Ensoftener.GDX.DrawingSetup.RenderScreenShaders(System.Boolean,SharpDX.Direct2D1.Effect[])">
+        <member name="M:Ensoftener.Global.DrawingSetup.RenderScreenShaders(System.Boolean,SharpDX.Direct2D1.Effect[])">
             <summary>Batch renders an array of effects applied to the entire screen.</summary>
             <param name="tileCorrection"></param>
             <param name="effects">The array of effects to render.</param>
         </member>
-        <member name="M:Ensoftener.GDX.Initialize(System.Int32,System.Boolean,System.Nullable{SharpDX.Size2})">
+        <member name="M:Ensoftener.Global.Initialize(System.Int32,System.Boolean,System.Nullable{SharpDX.Size2})">
             <summary>Creates all the stuff needed for a basic SharpDX setup. The first device (0th) will be set as output.</summary>
             <param name="parallelDevices">The amount of parallel Direct2D setups to create (for multirendering).
             All components will be accessible from their lists. Cannot be less than 1.</param>
             <param name="crashIfLag">Crashes if a shader takes more than 2 seconds to execute. Useful when testing out shaders with loops.</param>
             <param name="sizes">The default size of all device contexts, except for the outputting one. By default it's the window size.</param>
         </member>
-        <member name="M:Ensoftener.GDX.Run(System.Action)">
+        <member name="M:Ensoftener.Global.Run(System.Action,System.Boolean)">
             <summary>Starts displaying the window and runs the rendering loop.</summary>
             <param name="RenderMethod">The method that will be called on each monitor refresh.</param>
             <remarks><b>Do not use this for updating game logic!</b> The <b><paramref name="RenderMethod"/></b> is dependent on your monitor refresh rate
-            (60x or 144x per second). Instead, add a loop to <b><see cref="!:SideLoops"/></b> that runs at a fixed refresh rate.</remarks>
+            (60x or 144x per second). Instead, create a second thread that's called every 1/60th of a second.</remarks>
+            <param name="updateInput">Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+            is running can have consequences if the other thread relies on this input.</param>
         </member>
-        <member name="M:Ensoftener.GDX.EndRender">
-            <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
+        <member name="M:Ensoftener.Global.RunSideThread(System.Action,System.Int64,System.Boolean)">
+            <summary>Starts another updating loop after the window shows up, independent from your monitor's refresh rate.
+            The thread will be then attached to the main one and will accept inputs as well.</summary>
+            <param name="UpdateMethod">The method to call each update.</param>
+            <param name="tickRefreshRate">The amount of ticks to wait until next call. A tick is 100 nanoseconds long, so 166666 ticks is about 1/60th of a second.</param>
+            <param name="updateInput">Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
+            is running can have consequences if the other thread relies on this input.</param>
         </member>
-        <member name="M:Ensoftener.GDX.RemoveSetup(System.Int32)">
-            <summary>Disposes of a setup and removes it from the lists.</summary>
-        </member>
-        <member name="M:Ensoftener.GDX.LoadBitmapFromFile(SharpDX.Direct2D1.DeviceContext,System.String)">
-            <summary>Creates a SharpDX Bitmap off of an image file.</summary>
-        </member>
-        <member name="M:Ensoftener.GDX.ConvertGDIToD2DBitmap(SharpDX.Direct2D1.DeviceContext,System.Drawing.Bitmap)">
-            <summary>Creates a SharpDX Bitmap off of a GDI+ bitmap.</summary>
-        </member>
-        <member name="M:Ensoftener.GDX.ToGDIBitmap(SharpDX.Direct2D1.Bitmap1)">
-            <summary>Creates a GDI+ bitmap off of a SharpDX Bitmap. Very slow if using float colors.</summary>
-            <remarks>If you're taking a screenshot, use <b><see cref="P:Ensoftener.GDX.FinalDC"/></b> to get the final rendering result.
-            <b><see cref="P:Ensoftener.GDX.FinalDC"/></b> always uses byte colors, which means the screenshot process is fairly quick.</remarks>
-        </member>
-        <member name="M:Ensoftener.GDX.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
-            <summary>Copies the device context's render target for further CPU processing (such as saving to a file).</summary>
-            <returns>The render target's bitmap. Requires a newer version of DirectX and cannot be read by the GPU.</returns>
-        </member>
-        <member name="M:Ensoftener.GDX.GetScreenGPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
-            <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
-            <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
-        </member>
-        <member name="T:Ensoftener.GVK">
-            <summary>The class containing everything necessary to run a Vulkan 2D window.</summary>
-        </member>
-        <member name="P:Ensoftener.GVK.UpdateInputOnRender">
-            <summary>Updates mouse+keyboard input in the main render thread. This is very important to look after, as updating input while another thread
-            is running can have consequences if the other thread relies on this input.</summary>
-        </member>
-        <member name="P:Ensoftener.GVK.RenderMethod">
-            <summary>The main render loop of the Vulkan window. The device is necessary for creating more surfaces and the surface is the window's canvas.</summary>
-        </member>
-        <member name="P:Ensoftener.GVK.VulkanForm.Text">
-            <summary>The window title.</summary>
-        </member>
-        <member name="T:Ensoftener.GShared">
-            <summary>Extensions, Win32 calls and common methods shared across DirectX and Vulkan.</summary>
-        </member>
-        <member name="T:Ensoftener.GShared.SideLoop">
-            <summary>A loop separated from the main rendering method. The loop will run ONLY after <b><see cref="!:GDX.Run(Action, bool)"/></b> has started.</summary>
-        </member>
-        <member name="P:Ensoftener.GShared.SideLoop.Name">
-            <summary>The name of the thread that will appear on the debugger.</summary>
-        </member>
-        <member name="P:Ensoftener.GShared.SideLoop.RefreshRate">
-            <summary>The loop's refresh rate, in miliseconds. Accepts up to 4 decimal numbers. Default is 16.6667 ms.</summary>
-        </member>
-        <member name="P:Ensoftener.GShared.SideLoop.UpdateInput">
-            <summary>Updates mouse+keyboard input in this thread. This is very important to look after, as updating input while another thread
-            is running can have consequences if the other thread relies on this input.</summary>
-        </member>
-        <member name="P:Ensoftener.GShared.SideLoop.UpdateMethod">
-            <summary>The method to call each update.</summary>
-        </member>
-        <member name="M:Ensoftener.GShared.Quit">
+        <member name="M:Ensoftener.Global.Quit">
             <summary>Schedules a shutdown of the window. After the current rendering method ends, all sounds are stopped and components deleted.</summary>
             <remarks>Windows doesn't allow for different threads to close a single window, which means the closure needs to be scheduled for later
             and then executed by the window thread.</remarks>
         </member>
-        <member name="M:Ensoftener.GShared.AddIfMissing``1(System.Collections.Generic.List{``0},``0)">
+        <member name="M:Ensoftener.Global.EndRender">
+            <summary>Presents the final output on screen. Put this at the end of your render method.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.RemoveSetup(System.Int32)">
+            <summary>Disposes of a setup and removes it from the lists.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.LoadBitmapFromFile(SharpDX.Direct2D1.DeviceContext,System.String)">
+            <summary>Creates a SharpDX Bitmap off of an image file.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.ConvertGDIToD2DBitmap(SharpDX.Direct2D1.DeviceContext,System.Drawing.Bitmap)">
+            <summary>Creates a SharpDX Bitmap off of a GDI+ bitmap.</summary>
+        </member>
+        <member name="M:Ensoftener.Global.ToGDIBitmap(SharpDX.Direct2D1.Bitmap1)">
+            <summary>Creates a GDI+ bitmap off of a SharpDX Bitmap. Very slow if using float colors.</summary>
+            <remarks>If you're taking a screenshot, use <b><see cref="P:Ensoftener.Global.FinalDC"/></b> to get the final rendering result.
+            <b><see cref="P:Ensoftener.Global.FinalDC"/></b> always uses byte colors, which means the screenshot process is fairly quick.</remarks>
+        </member>
+        <member name="M:Ensoftener.Global.GetScreenCPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
+            <summary>Copies the device context's render target for further CPU processing (such as saving to a file).</summary>
+            <returns>The render target's bitmap. Requires a newer version of DirectX and cannot be read by the GPU.</returns>
+        </member>
+        <member name="M:Ensoftener.Global.GetScreenGPURead(SharpDX.Direct2D1.DeviceContext,System.Nullable{SharpDX.Rectangle},System.Nullable{SharpDX.Point})">
+            <summary>Copies the device context's render target for further GPU processing (such as shaders).</summary>
+            <returns>The render target's bitmap. The bitmap cannot be read by the CPU.</returns>
+        </member>
+        <member name="M:Ensoftener.Global.AddIfMissing``1(System.Collections.Generic.List{``0},``0)">
             <summary>Adds an object to the end of the <seealso cref="T:System.Collections.Generic.List`1"/> only if the object isn't already present.</summary>
         </member>
-        <member name="M:Ensoftener.GShared.Clone``1(System.Collections.Generic.List{``0})">
+        <member name="M:Ensoftener.Global.Clone``1(System.Collections.Generic.List{``0})">
             <summary>Copies all contents of a <seealso cref="T:System.Collections.Generic.List`1"/> into a new <seealso cref="T:System.Collections.Generic.List`1"/>.</summary>
         </member>
-        <member name="M:Ensoftener.GShared.OneItem``1(System.Collections.Generic.List{``0},``0)">
+        <member name="M:Ensoftener.Global.OneItem``1(System.Collections.Generic.List{``0},``0)">
             <summary>Clears a <seealso cref="T:System.Collections.Generic.List`1"/> and adds one item.</summary>
         </member>
-        <member name="M:Ensoftener.GShared.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
+        <member name="M:Ensoftener.Global.ScreenRectangle(SharpDX.Direct2D1.DeviceContext)">
             <summary>Gets the device context's drawing rectangle.</summary>
         </member>
-        <member name="M:Ensoftener.GShared.SetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32,``0)">
+        <member name="M:Ensoftener.Global.SetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32,``0)">
             <summary>Sets the data of a vertex buffer after the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method has been called.</summary>
             <param name="originalData">The array received from the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method.</param>
             <param name="offset">The offset of the value to modify, in bytes.</param>
             <param name="value">The value to set.</param>
         </member>
-        <member name="M:Ensoftener.GShared.GetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32)">
+        <member name="M:Ensoftener.Global.GetMappedData``1(SharpDX.Direct2D1.VertexBuffer,System.Byte[],System.Int32)">
             <summary>Gets the data of a vertex buffer after the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method has been called.</summary>
             <param name="originalData">The array received from the <see cref="M:SharpDX.Direct2D1.VertexBuffer.Map(System.Byte[],System.Int32)"/> method.</param>
             <param name="offset">The offset of the value to modify, in bytes.</param>
@@ -293,7 +267,7 @@
         </member>
         <member name="M:Ensoftener.PVShaderBase.ReloadVertexBuffer(System.Boolean)">
             <summary>Updates the vertex buffer according to <see cref="P:Ensoftener.PVShaderBase.VsInBuffer"/>.</summary>
-            <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="P:Ensoftener.GDX.VertexShaderFile"/>.</param>
+            <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="P:Ensoftener.Global.VertexShaderFile"/>.</param>
         </member>
         <member name="T:Ensoftener.CloneablePixelShader">
             <summary>A shader with no constant buffer, no inside effects and 1 texture input.
@@ -349,53 +323,24 @@
         <member name="M:Ensoftener.Sound.WPFSound.#ctor(System.Uri)">
             <exception cref="T:System.IO.FileNotFoundException"/>
         </member>
-        <member name="M:Ensoftener.Sound.WPFSound.#ctor(System.String)">
-            <exception cref="T:System.IO.FileNotFoundException"/>
-        </member>
-        <member name="P:Ensoftener.Sound.CSCSound.Speed">
+        <member name="P:Ensoftener.Sound.CSWSound.Speed">
             <summary>Speed of the sound, with changed pitch. 1 is normal. Changing speed reloads all components (including the source file) and should be used sparingly</summary>
         </member>
-        <member name="M:Ensoftener.Sound.CSCSound.#ctor(System.String,System.Boolean,System.Int32)">
-            <exception cref="T:System.IO.FileNotFoundException"/><exception cref="T:System.NotSupportedException"/>
-        </member>
-        <member name="M:Ensoftener.Sound.CSCSound.GetModifierInput">
-            <summary>Plug this into the beginning of your sound modifier chain.</summary>
-        </member>
-        <member name="M:Ensoftener.Sound.CSCSound.SetOutputModifier(Ensoftener.Sound.CSCSound.ModifierBase)">
-            <summary>Inserts a modifier before the final sound output. Can be the end of a larger modifier chain.</summary>
-        </member>
-        <member name="T:Ensoftener.Sound.CSCSound.ModifierBase">
-            <summary>Not designed for instancing. Use <see cref="T:Ensoftener.Sound.CSCSound.Modifier"/> or <see cref="T:Ensoftener.Sound.CSCSound.ModifierAdvanced"/> instead.</summary>
-        </member>
-        <member name="M:Ensoftener.Sound.CSCSound.ModifierBase.#ctor(CSCore.ISampleSource,CSCore.ISampleSource)">
-            <summary>The <paramref name="speed"/> parameter retimes the first source to its sample rate. This exists to achieve custom playback speed.</summary>
-            <remarks>To plug in the sound source or another modifier, put <see cref="M:Ensoftener.Sound.CSCSound.GetModifierInput"/> in both inputs or the modifier you want to plug in.</remarks>
-        </member>
-        <member name="T:Ensoftener.Sound.CSCSound.Modifier">
-            <summary>Custom operator that modifies sound waves. <b>Must be disposed.</b></summary>
-        </member>
-        <member name="M:Ensoftener.Sound.CSCSound.Modifier.#ctor(CSCore.ISampleSource,CSCore.ISampleSource)">
-            <inheritdoc/>
-        </member>
-        <member name="P:Ensoftener.Sound.CSCSound.Modifier.Operator">
-            <summary>Modifies every sound wave that's being played, using both left and right channel as inputs and outputs.
-            If the sound has a single channel, both inputs will be the same.</summary>
-        </member>
-        <member name="T:Ensoftener.Sound.CSCSound.ModifierAdvanced">
-            <summary>Similarly to <see cref="T:Ensoftener.Sound.CSCSound.Modifier"/>, modifies sound waves that are being played, except that this also recieves all of the streaming data,
-            including the direct access to the array of samples. <b>Also must be disposed.</b></summary>
-            <remarks>To implement a working modifier, create a for loop that starts at the offset and ends at offset + count.
-            That way, you modify every relevant sample that actually plays in the speaker.</remarks>
-        </member>
-        <member name="T:Ensoftener.Sound.CSCSound.ModifierAdvanced.CSWSoundSampleData">
+        <member name="T:Ensoftener.Sound.CSWSound.CSWSoundModifier.CSWSoundSampleData">
             <summary>Contains information about the audio stream.</summary>
         </member>
-        <member name="F:Ensoftener.Sound.CSCSound.ModifierAdvanced.CSWSoundSampleData.Buffer">
+        <member name="F:Ensoftener.Sound.CSWSound.CSWSoundModifier.CSWSoundSampleData.Buffer">
             <summary>The array of samples to be modified for this frame. Because the modifier is called every latency interval,
             the array's length is usually the sample rate multiplied by latency (44100 * 0.1s = 4410).</summary>
         </member>
-        <member name="M:Ensoftener.Sound.CSCSound.ModifierAdvanced.#ctor(CSCore.ISampleSource,CSCore.ISampleSource)">
-            <inheritdoc/>
+        <member name="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.Modifier">
+            <summary>Modifies every sound wave that's being played.</summary>
+        </member>
+        <member name="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.ModifierAdvanced">
+            <summary>Like <b><see cref="P:Ensoftener.Sound.CSWSound.CSWSoundModifier.Modifier"/></b>, modifies sound waves that are being played, except that this also recieves all of the streaming data,
+            including the direct access to the array of samples.</summary>
+            <remarks>To implement a working modifier, create a for loop that starts at the offset and ends at offset + count.
+            That way, you modify every relevant sample that actually plays in the speaker.</remarks>
         </member>
         <member name="T:Ensoftener.SvgImage">
             <summary>A SVG image that can be modified at runtime.</summary>

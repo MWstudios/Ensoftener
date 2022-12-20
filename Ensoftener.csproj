@@ -71,8 +71,6 @@
 
   <ItemGroup>
     <PackageReference Include="CSCore" Version="1.2.1.2" />
-    <PackageReference Include="NVorbis" Version="0.10.5" />
-    <PackageReference Include="vke" Version="0.1.21" />
   </ItemGroup>
 
   <ItemGroup>
@@ -93,9 +91,6 @@
     </Reference>
     <Reference Include="SharpDX.Mathematics">
       <HintPath>include\SharpDX.Mathematics.dll</HintPath>
-    </Reference>
-    <Reference Include="vkvg.net">
-      <HintPath>..\..\VKVG test\bin\Debug\net6.0-windows\vkvg.net.dll</HintPath>
     </Reference>
   </ItemGroup>
 

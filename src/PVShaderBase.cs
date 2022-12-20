@@ -3,7 +3,6 @@ using System.IO;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using Ensoftener.Direct2D;
 
 namespace Ensoftener
 {
