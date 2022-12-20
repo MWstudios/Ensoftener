@@ -38,10 +38,9 @@ namespace Ensoftener.Input
         /// <summary>Accept faking keyboard and mouse input with <b><see cref="PressKey(Keys)"/></b>, <b><see cref="UnpressKey(Keys)"/></b>,
         /// <b><see cref="MouseButton.HoldDown()"/></b>, <b><see cref="MouseButton.StopHoldingDown()"/></b> and <b><see cref="MouseButton.Click()"/></b>.</summary>
         public static bool UseFakeInputs { get; set; } = false;
-        internal static void Initialize() { GDX.Form.MouseMove += Form_MouseMove; GDX.Form.MouseWheel += Form_MouseWheel; GDX.Form.KeyPress += Form_KeyPress; }
-        private static void Form_KeyPress(object sender, KeyPressEventArgs e) => KeyboardChars = (KeyboardChars ?? string.Empty) + e.KeyChar.ToString();
-        static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e, false);
-        static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e, true);
+        internal static void Form_KeyPress(object sender, KeyPressEventArgs e) => KeyboardChars = (KeyboardChars ?? string.Empty) + e.KeyChar.ToString();
+        internal static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e, false);
+        internal static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e, true);
         public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128 || (UseFakeInputs && (fakeInputs[(int)key] & 128) == 128);
         public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1 || (UseFakeInputs && (fakeInputs[(int)key] & 1) == 1);
         public static void PressKey(Keys key) { fakeInputs[(int)key] |= 1; fakeInputs[(int)key] ^= 128; }
