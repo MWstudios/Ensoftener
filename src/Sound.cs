@@ -227,17 +227,17 @@ namespace Ensoftener.Sound
         public class ModifierAdvanced : ModifierBase
         {
             /// <summary>Contains information about the audio stream.</summary>
-            public struct CSWSoundSampleData
+            public struct InputData
             {
                 /// <summary>The array of samples to be modified for this frame. Because the modifier is called every latency interval,
                 /// the array's length is usually the sample rate multiplied by latency (44100 * 0.1s = 4410).</summary>
                 public float[] Buffer; public int Offset, Count, SamplesRead;
-                public CSWSoundSampleData(float[] buffer, int offset, int count, int samplesRead) { Buffer = buffer; Offset = offset; Count = count; SamplesRead = samplesRead; }
+                public InputData(float[] buffer, int offset, int count, int samplesRead) { Buffer = buffer; Offset = offset; Count = count; SamplesRead = samplesRead; }
             } /// <inheritdoc/>
             public ModifierAdvanced(ISampleSource source) : base(source) { }
             public override int Read(float[] buffer, int offset, int count) //count <= buffer.Length
             { int samples = base.Read(buffer, offset, count); if (samples == 0) return 0; Operator?.Invoke(Source, new(buffer, offset, count, samples)); return samples; }
-            public Action<ISampleSource, CSWSoundSampleData> Operator { get; set; }
+            public Action<ISampleSource, InputData> Operator { get; set; }
         }
         public class PresetMod_ChangeRate : Modifier
         { public PresetMod_ChangeRate(ISampleSource source, ISampleSource speed) : base(speed) => Source = source ?? throw new ArgumentNullException(nameof(source)); }
@@ -280,18 +280,28 @@ namespace Ensoftener.Sound
         }
         public class ModifierMultiInput : ModifierBase
         {
-            public List<ISampleSource> Sources { get; } = new();
+            public List<ISampleSource> Sources { get; } = new(); List<float[]> buffers = new();
             public ModifierMultiInput(ISampleSource rate) : base(rate) { }
             public override int Read(float[] buffer, int offset, int count)
             {
+                while (buffers.Count < Sources.Count) buffers.Add(new float[buffer.Length]);
+                while (buffers.Count > Sources.Count) buffers.RemoveAt(buffers.Count - 1);
                 int samples = 0;
-                Operator?.Invoke(Sources.Zip(Sources.Select(x => new float[buffer.Length]))
-                    .Select(x => { samples = x.First.Read(x.Second, offset, count); return x.Second; }), offset, count);
+                foreach (var source in Sources.Zip(buffers)) samples = source.First.Read(source.Second, offset, count);
+                Operator?.Invoke(new(buffers, buffer, offset, count, samples));
                 return samples;
             }
-            /// <summary>The operator that will process the sound input. The first parameter is a list a buffer from all inputs, in the order they were added.
-            /// The second parameter is the start offset within the buffer and the third parameter is the sample count.</summary>
-            public Action<IEnumerable<float[]>, int, int> Operator { get; set; }
+            public struct InputData
+            {
+                /// <summary>A list off buffers from all inputs, in the order they were added.</summary>
+                public IEnumerable<float[]> Sources;
+                /// <summary>The output buffer. These values will be passed on to the next modifier or the audio output.</summary>
+                public float[] Output; public int Offset, Count, SamplesRead;
+                public InputData(IEnumerable<float[]> sources, float[] output, int offset, int count, int samplesRead)
+                { Sources = sources; Output = output; Offset = offset; Count = count; SamplesRead = samplesRead; }
+            }
+            /// <summary>The operator that will process the sound input.</summary>
+            public Action<InputData> Operator { get; set; }
         }
         public class PresetMod_FFT : ModifierAdvanced
         {
