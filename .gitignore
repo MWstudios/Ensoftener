@@ -365,5 +365,8 @@ FodyWeavers.xsd
 /semantics.pdn
 /Ensoftener/hlsl examples
 /Ensoftener.zip
+EnsoftenerCpp/
 *.pdn
 /Ensoftener/Vulkan libraries
+/Vulkan libraries
+/Vulkan libraries.zip
