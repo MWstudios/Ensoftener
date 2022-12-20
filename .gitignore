@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /Ensoftener/hlsl examples
 /Ensoftener.zip
 *.pdn
+/Ensoftener/Vulkan libraries
