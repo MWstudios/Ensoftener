@@ -36,12 +36,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="EnsoftenerCpp\**" />
     <Compile Remove="Ensoftener\**" />
     <Compile Remove="Vulkan libraries\**" />
+    <EmbeddedResource Remove="EnsoftenerCpp\**" />
     <EmbeddedResource Remove="Ensoftener\**" />
     <EmbeddedResource Remove="Vulkan libraries\**" />
+    <None Remove="EnsoftenerCpp\**" />
     <None Remove="Ensoftener\**" />
     <None Remove="Vulkan libraries\**" />
+    <Page Remove="EnsoftenerCpp\**" />
     <Page Remove="Vulkan libraries\**" />
   </ItemGroup>
 
