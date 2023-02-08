@@ -39,7 +39,7 @@ using System.Collections.Generic;
 
 using SharpDX;
 using SharpDX.Direct2D1;
-using Ensoftener.Direct2D;
+using Ensoftener.DirectX;
 
 namespace Ensoftener
 {
@@ -92,7 +92,7 @@ namespace Ensoftener
             using MemoryStream readStream = new(Encoding.Default.GetBytes(XML));
             using SharpDX.WIC.WICStream wicStream = new(GDX.WICFactory, readStream);
             Document?.Dispose();
-            Document = DeviceContext.CreateSvgDocument(wicStream, new(GDX.Form.Size.Width, GDX.Form.Size.Height));
+            Document = DeviceContext.CreateSvgDocument(wicStream, new(GDX.Windows[0].Form.ClientSize.Width, GDX.Windows[0].Form.ClientSize.Height));
             DocumentAsXml = new(); DocumentAsXml.LoadXml(XML);
             Root?.Dispose(); Root = new(this, null, Document.Root, DocumentAsXml["svg"]); Outdated = false;
         }

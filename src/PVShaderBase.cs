@@ -1,11 +1,9 @@
 ﻿using System;
-using System.IO;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using Ensoftener.Direct2D;
 
-namespace Ensoftener
+namespace Ensoftener.DirectX
 {
     public enum SamplingFilter { Bilinear, Point }
     /// <summary>A more or less functional shader effect inherited from <see cref="CustomEffectBase"/>. You can modify its input count, constant buffer, its nodes,
@@ -17,7 +15,7 @@ namespace Ensoftener
     public class PVShaderBase : CustomEffectBase, DrawTransform
     {
         Guid psGUID, vsGUID, vbGUID; public DrawInformation dInfo; public VertexBuffer vertexBuffer; public TransformGraph transformGraph;
-        public bool vertexShader, pixelShader; string psPath, vsPath; public byte[] psFile, vsFile; public EffectContext effectContext;
+        public bool isVertexShader, isPixelShader; string psPath, vsPath; public byte[] PixelShader, VertexShader; public EffectContext effectContext;
         public virtual VertexBuffer GetVertexBuffer(VertexUsage vertexUsage)
         {
             //InitializeVertexBuffer(effectContext);
@@ -27,12 +25,10 @@ namespace Ensoftener
             // The GUID is optional, and is provided here to register the geometry globally.
             // As mentioned above, this avoids duplication if multiple versions of the effect are created.
             InputElement[] ie = InputElements;
-            VertexBuffer vb = new(effectContext, vbGUID, new(ie.Length, vertexUsage, buffer.Item1), new(vsFile, ie, buffer.Item2));
+            VertexBuffer vb = new(effectContext, vbGUID, new(ie.Length, vertexUsage, buffer.Item1), new(VertexShader, ie, buffer.Item2));
             buffer.Item1?.Dispose();
             return vb;
         }
-        public string PixelShaderFilePath { get => psPath; set { psPath = value; psFile = File.ReadAllBytes(value); } }
-        public string VertexShaderFilePath { get => vsPath; set { vsPath = value; vsFile = File.ReadAllBytes(value); } }
         public SamplingFilter ScaleDownSampling { get; set; } = SamplingFilter.Point;
         public SamplingFilter ScaleUpSampling { get; set; } = SamplingFilter.Bilinear;
         public SamplingFilter MipmapSampling { get; set; } = SamplingFilter.Point;
@@ -46,7 +42,7 @@ namespace Ensoftener
         /// <param name="usePS">Enable the pixel shader stage in this effect.</param>
         /// <param name="useVS">Enable the vertex shader stage in this effect.</param>
         public PVShaderBase(Guid? psGuid = null, Guid? vsGuid = null, Guid? vbGuid = null, bool usePS = true, bool useVS = false)
-        { pixelShader = usePS; vertexShader = useVS; psGUID = psGuid ?? Guid.Empty; vsGUID = vsGuid ?? Guid.Empty; vbGUID = vbGuid ?? Guid.Empty; }
+        { isPixelShader = usePS; isVertexShader = useVS; psGUID = psGuid ?? Guid.Empty; vsGUID = vsGuid ?? Guid.Empty; vbGUID = vbGuid ?? Guid.Empty; }
         [PropertyBinding(-1, "(0,0,0,0)", "(0,0,0,0)", "(0,0,0,0)")] public Vector4 BorderExpansion { get; set; } = new(0, 0, 0, 0);
         /// <summary>The amount of vertices processed by the vertex shader. The amount must be a multiple of 3, as every 3 vertices form a single face.</summary>
         public int VertexCount { get; set; } public int InputCount { get; set; } = 1;
@@ -56,10 +52,10 @@ namespace Ensoftener
             //Unfortunately this is too early because the code below within this method is used to populate stateful data needed by the SetDrawInformation call. 
             //transformGraph.SetSingleTransformNode(this);
             effectContext = eC;
-            if (pixelShader) { PixelShaderFilePath = GDX.ShaderFile; effectContext.LoadPixelShader(psGUID, psFile); }
-            if (vertexShader)
+            if (isPixelShader) { PixelShader = GDX.NextShader; effectContext.LoadPixelShader(psGUID, PixelShader); }
+            if (isVertexShader)
             {
-                VertexShaderFilePath = GDX.VertexShaderFile; effectContext.LoadVertexShader(vsGUID, vsFile);
+                VertexShader = GDX.NextVertexShader; effectContext.LoadVertexShader(vsGUID, VertexShader);
                 vertexBuffer = effectContext.FindVertexBuffer(vbGUID);
                 if (vertexBuffer == null) ReloadVertexBuffer(true);
             }
@@ -92,19 +88,19 @@ namespace Ensoftener
         {
             dInfo?.Dispose();
             dInfo = drawInfo;
-            if (pixelShader)
+            if (isPixelShader)
             {
                 dInfo.SetPixelShader(psGUID, PixelOptions.None);
                 dInfo.SetOutputBuffer(BufferPrecision.PerChannel32Float, ChannelDepth.Four);
                 dInfo.SetInputDescription(0, new InputDescription(GetSampling, 0));
             }
-            if (vertexShader) dInfo.SetVertexProcessing(vertexBuffer, VertexOptions.UseDepthBuffer, null, new VertexRange(0, VertexCount), vsGUID);
+            if (isVertexShader) dInfo.SetVertexProcessing(vertexBuffer, VertexOptions.UseDepthBuffer, null, new VertexRange(0, VertexCount), vsGUID);
         }
         /// <summary>Updates the vertex buffer according to <see cref="VsInBuffer"/>.</summary>
-        /// <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="GDX.VertexShaderFile"/>.</param>
+        /// <param name="sameShader">Reloads the same .cso file as before (otherwise uses <see cref="GDX.NextVertexShader"/>.</param>
         public void ReloadVertexBuffer(bool sameShader = true)
         {
-            if (!sameShader) VertexShaderFilePath = GDX.VertexShaderFile;
+            if (!sameShader) VertexShader = GDX.NextVertexShader;
             vertexBuffer?.Dispose(); //vbGUID = Guid.NewGuid();
             vertexBuffer = GetVertexBuffer(VertexUsage.Static);
         }

@@ -1,17 +1,16 @@
 ﻿using System;
-using System.IO;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 
-namespace Ensoftener
+namespace Ensoftener.DirectX
 {
     /// <summary>A compute shader effect inherited from <seealso cref="CustomEffectBase"/>. You can modify its input count, constant buffer and its nodes.</summary>
     /// <remarks><b>Requires EnsoftenerCpp32.dll or EnsoftenerCpp64.dll in to be put in your program directory.</b></remarks>
     [CustomEffect("A shader that inherits from ComputeShaderBase", "CSB inheritors", "Ensoftener"), CustomEffectInput("Source")]
     public class ComputeShaderBase : CustomEffectBase, ComputeTransform
     {
-        public Guid GUID; public int borderExpansion = 0; public ComputeInformation cInfo; public TransformGraph transformGraph;
+        public Guid GUID; public int borderExpansion = 0; public ComputeInformation cInfo; public TransformGraph transformGraph; public byte[] ComputeShader;
         public SamplingFilter ScaleDownSampling { get; set; } = SamplingFilter.Point;
         public SamplingFilter ScaleUpSampling { get; set; } = SamplingFilter.Bilinear;
         public SamplingFilter MipmapSampling { get; set; } = SamplingFilter.Point;
@@ -21,7 +20,7 @@ namespace Ensoftener
         /// <param name="guid">The GUID of the effect. Each GUID has one compute shader assigned to it.</param>
         public ComputeShaderBase(Guid guid) { GUID = guid; }
         public override void Initialize(EffectContext effectContext, TransformGraph tg)
-        { effectContext.LoadComputeShader(GUID, File.ReadAllBytes(Direct2D.GDX.ShaderFile)); SetGraph(tg); }
+        { ComputeShader = GDX.NextShader; effectContext.LoadComputeShader(GUID, ComputeShader); SetGraph(tg); }
         public override void SetGraph(TransformGraph tg) { transformGraph?.Dispose(); transformGraph = tg; InputCount = tg.InputCount; tg.SetSingleTransformNode(this); }
         public void SetComputeInformation(ComputeInformation computeInfo)
         {
