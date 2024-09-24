@@ -14,8 +14,8 @@ public static class DCChaining
         float opacity = 1, InterpolationMode interpolationMode = InterpolationMode.NearestNeighbor)
     { d2dc.DrawBitmap(bitmap, opacity, interpolationMode); return d2dc; }
     public static DeviceContext ChainDrawBitmap(this DeviceContext d2dc, Bitmap bitmap, RawRectangleF? sourceRectangle,
-        RawRectangleF? destinationRectangle, float opacity = 1, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.NearestNeighbor)
-    { d2dc.DrawBitmap(bitmap, destinationRectangle, opacity, interpolationMode, sourceRectangle); return d2dc; }
+        RawRectangleF? destinationRectangle, float opacity = 1, InterpolationMode interpolationMode = InterpolationMode.NearestNeighbor, RawMatrix? transform = null)
+    { d2dc.DrawBitmap(bitmap, destinationRectangle, opacity, interpolationMode, sourceRectangle, transform); return d2dc; }
     public static DeviceContext ChainDrawEllipse(this DeviceContext d2dc, Ellipse ellipse, Brush brush, float strokeWidth = 1)
     { d2dc.DrawEllipse(ellipse, brush, strokeWidth); return d2dc; }
     public static DeviceContext ChainDrawEllipse(this DeviceContext d2dc, Ellipse ellipse, Brush brush, StrokeStyle strokeStyle, float strokeWidth = 1)

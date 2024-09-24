@@ -7,18 +7,14 @@ namespace Ensoftener.Input
     {
         public class MouseButton
         {
-            bool held2, fakeHold, fakeClick; public bool PressedDown { get; private set; } public bool Held { get; private set; } public bool Released { get; private set; }
+            bool held2; public bool PressedDown { get; private set; } public bool Held { get; private set; } public bool Released { get; private set; }
             public void Update(Keys button)
             {
-                Held = IsKeyPressed(button) || (fakeHold && UseFakeInputs);
-                if (fakeClick) { fakeHold = false; fakeClick = false; }
+                Held = IsKeyPressed(button);
                 if (Held) PressedDown = !held2; else Released = held2; held2 = Held;
             }
-            public void HoldDown() { if (UseFakeInputs) fakeHold = true; }
-            public void StopHoldingDown() { if (UseFakeInputs) fakeHold = false; }
-            public void Click() { if (UseFakeInputs) { fakeHold = true; fakeClick = true; } }
         }
-        readonly static byte[] keyInputs = new byte[256], fakeInputs = new byte[256]; static float mX, mY;
+        readonly static byte[] keyInputs = new byte[256], lastInputs = new byte[256]; static float mX, mY;
         public static MouseButton LeftButton { get; private set; } = new();
         public static MouseButton RightButton { get; private set; } = new();
         public static MouseButton MiddleButton { get; private set; } = new();
@@ -28,25 +24,21 @@ namespace Ensoftener.Input
         public static string KeyboardChars { get; private set; }
         public static void Update()
         {
-            XboxInput.Update(); GetKeyboardState(keyInputs); KeyboardChars = null; Scrolls = 0;
+            XboxInput.Update();
+            System.Buffer.BlockCopy(keyInputs, 0, lastInputs, 0, 256); GetKeyboardState(keyInputs); KeyboardChars = null; Scrolls = 0;
             LeftButton.Update(Keys.LButton); RightButton.Update(Keys.RButton);
             MiddleButton.Update(Keys.MButton); SideButton1.Update(Keys.XButton1); SideButton2.Update(Keys.XButton2);
         }
-        public static float MouseX { get => mX; set => Cursor.Position = new((int)(Cursor.Position.X - mX + value), Cursor.Position.Y); }
-        public static float MouseY { get => mY; set => Cursor.Position = new(Cursor.Position.X, (int)(Cursor.Position.Y - mY + value)); }
+        public static float MouseX { get; internal set; }
+        public static float MouseY { get; internal set; }
         public static sbyte Scrolls { get; private set; } = 0;
-        /// <summary>Accept faking keyboard and mouse input with <b><see cref="PressKey(Keys)"/></b>, <b><see cref="UnpressKey(Keys)"/></b>,
-        /// <b><see cref="MouseButton.HoldDown()"/></b>, <b><see cref="MouseButton.StopHoldingDown()"/></b> and <b><see cref="MouseButton.Click()"/></b>.</summary>
-        public static bool UseFakeInputs { get; set; } = false;
         internal static void Form_KeyPress(object sender, KeyPressEventArgs e) => KeyboardChars = (KeyboardChars ?? string.Empty) + e.KeyChar.ToString();
-        internal static void Form_MouseMove(object sender, MouseEventArgs e) => SetFlags(e, false);
-        internal static void Form_MouseWheel(object sender, MouseEventArgs e) => SetFlags(e, true);
-        public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128 || (UseFakeInputs && (fakeInputs[(int)key] & 128) == 128);
-        public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1 || (UseFakeInputs && (fakeInputs[(int)key] & 1) == 1);
-        public static void PressKey(Keys key) { fakeInputs[(int)key] |= 1; fakeInputs[(int)key] ^= 128; }
-        public static void UnpressKey(Keys key) { fakeInputs[(int)key] &= 0b11111110; }
+        internal static void Form_MouseWheel(object sender, MouseEventArgs e) { Scrolls += (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); }
+        public static bool IsKeyPressed(Keys key) => (keyInputs[(int)key] & 128) == 128;
+        public static bool IsKeyEnabled(Keys key) => (keyInputs[(int)key] & 1) == 1;
+        public static bool IsKeyPressedDown(Keys key) => (keyInputs[(int)key] & 128) == 128 && (lastInputs[(int)key] & 128) != (keyInputs[(int)key] & 128);
+        public static bool IsKeyReleased(Keys key) => (keyInputs[(int)key] & 128) == 0 && (lastInputs[(int)key] & 128) != (keyInputs[(int)key] & 128);
         [DllImport("user32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)] static extern bool GetKeyboardState(byte[] lpKeyState);
-        static void SetFlags(MouseEventArgs e, bool scroll) { if (scroll) Scrolls = (sbyte)(e.Delta / SystemInformation.MouseWheelScrollDelta); mX = e.X; mY = e.Y; }
     }
     /// <summary>The class that provides everything necessary for working with Xbox controllers.</summary>
     public static class XboxInput
@@ -75,19 +67,14 @@ namespace Ensoftener.Input
             /// <remarks>Not all values actually influence the strength, the motors have only several steps of vibration intensity.</remarks>
             public void Vibrate(ushort left, ushort right) { XVStruct vibration = new(left, right); if (Connected) XInputSetState(number, ref vibration); }
         }
-        /// <summary>The first controller that was plugged in.</summary>
-        public static XboxController Controller1 { get; } = new(0);
-        /// <summary>The second controller that was plugged in.</summary>
-        public static XboxController Controller2 { get; } = new(1);
-        /// <summary>The third controller that was plugged in.</summary>
-        public static XboxController Controller3 { get; } = new(2);
-        /// <summary>The fourth controller that was plugged in.</summary>
-        public static XboxController Controller4 { get; } = new(3);
+        /// <summary>The 4 controllers in the order they were plugged in.
+        /// If there are less, the remaining ones will have <see cref="XboxController.Connected"/> set to false.</summary>
+        public static XboxController[] Controllers { get; } = { new(0), new(1), new(2), new(3) };
         [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         internal static extern int XInputGetState(int controller, ref XIStruct xInput);
         [DllImport("xinput9_1_0.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         internal static extern int XInputSetState(int controller, ref XVStruct xVibrate);
-        internal static void Update() { Controller1.Update(); Controller2.Update(); Controller3.Update(); Controller4.Update(); }
+        internal static void Update() { for (int i = 0; i < Controllers.Length; i++) Controllers[i].Update(); }
         public enum XboxButtons { DPadUp, DPadDown, DPadLeft, DPadRight, MenuButton, WindowButton, LeftJoystick, RightJoystick, LB, RB, A = 12, B = 13, X = 14, Y = 15 }
         [StructLayout(LayoutKind.Sequential)] internal struct XIStruct
         { public uint packet; public short buttons; public byte LT, RT; public short joyLeftX, joyLeftY, joyRightX, joyRightY; }

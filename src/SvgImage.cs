@@ -79,20 +79,20 @@ namespace Ensoftener
         /// <summary>Creates an SVG image from a file or an XML string.</summary>
         /// <param name="input">The file path or XML string.</param>
         /// <param name="fromFile">Determines whether to read from a file or from the string itself.</param>
-        public SvgImage(DeviceContext d2dc, string input, bool fromFile = true)
+        public SvgImage(DeviceContext d2dc, string input, bool fromFile = true, float maxWidth = float.PositiveInfinity, float maxHeight = float.PositiveInfinity)
         {
             DeviceContext = d2dc.QueryInterface<DeviceContext5>();
-            Rebuild(fromFile ? File.ReadAllText(input) : input);
+            Rebuild(fromFile ? File.ReadAllText(input) : input, maxWidth, maxHeight);
         }
         /// <summary>Recreates the SVG image. See the description of the <b><seealso cref="Outdated"/></b> property for why this needs to be done.
         /// <br/>This method is automatically called when <b><seealso cref="UpdateIfOutdated"/></b> is set to true.</summary>
-        public void Rebuild() => Rebuild(DocumentAsXml.OuterXml);
-        public void Rebuild(string XML)
+        public void Rebuild(float maxWidth = float.PositiveInfinity, float maxHeight = float.PositiveInfinity) => Rebuild(DocumentAsXml.OuterXml, maxWidth, maxHeight);
+        public void Rebuild(string XML, float maxWidth = float.PositiveInfinity, float maxHeight = float.PositiveInfinity)
         {
             using MemoryStream readStream = new(Encoding.Default.GetBytes(XML));
             using SharpDX.WIC.WICStream wicStream = new(GDX.WICFactory, readStream);
             Document?.Dispose();
-            Document = DeviceContext.CreateSvgDocument(wicStream, new(GDX.Windows[0].Form.ClientSize.Width, GDX.Windows[0].Form.ClientSize.Height));
+            Document = DeviceContext.CreateSvgDocument(wicStream, new(maxWidth, maxHeight));
             DocumentAsXml = new(); DocumentAsXml.LoadXml(XML);
             Root?.Dispose(); Root = new(this, null, Document.Root, DocumentAsXml["svg"]); Outdated = false;
         }
